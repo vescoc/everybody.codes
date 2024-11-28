@@ -9,9 +9,16 @@ fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("part 2", |b| {
         b.iter(|| quest::part_2(include_bytes!("../data/part_2")))
     });
-    c.bench_function("part 3", |b| {
-        b.iter(|| quest::part_3(include_bytes!("../data/part_3")))
+
+    let mut group = c.benchmark_group("part_3");
+    group.sample_size(10);
+    group.bench_function("par", |b| {
+        b.iter(|| quest::part_3_par(include_bytes!("../data/part_3")))
     });
+    group.bench_function("nopar", |b| {
+        b.iter(|| quest::part_3_nopar(include_bytes!("../data/part_3")))
+    });
+    group.finish();
 }
 
 criterion_group!(benches, criterion_benchmark);
