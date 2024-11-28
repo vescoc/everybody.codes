@@ -1,51 +1,109 @@
-fn creature_to_potions(creature: u8) -> Option<u64> {
-    match creature {
-        b'A' => Some(0),
-        b'B' => Some(1),
-        b'C' => Some(3),
-        b'D' => Some(5),
-        b'x' => None,
-        _ => unreachable!(),
-    }
+use std::collections::HashSet;
+
+type Point = (usize, usize);
+
+fn manhattan(&(xa, ya): &Point, &(xb, yb): &Point) -> usize {
+    xa.abs_diff(xb) + ya.abs_diff(yb)
 }
 
-#[must_use]
-pub fn part_1(data: &[u8]) -> u64 {
-    data.iter().copied().filter_map(creature_to_potions).sum()
-}
-
-#[must_use]
-pub fn part_2(data: &[u8]) -> u64 {
-    data
-        .chunks_exact(2)
-        .map(|pair| {
-            let (sum, count) = pair
+fn min_distance(
+    q: &HashSet<Point>,
+    current: &HashSet<Point>,
+    check: impl Fn(usize) -> bool,
+) -> Option<(Point, usize)> {
+    q.iter()
+        .filter_map(|target| {
+            let distance = current
                 .iter()
-                .copied()
-                .map(creature_to_potions)
-                .fold((0, 0), |(sum, count), v| v.map_or((sum, count), |v| (sum + v, count + 1)));
-            sum + if count == 2 { 2 } else { 0 }
-        })
-        .sum()
-}
-
-#[must_use]
-pub fn part_3(data: &[u8]) -> u64 {
-    data
-        .chunks_exact(3)
-        .map(|pair| {
-            let (sum, count) = pair
-                .iter()
-                .copied()
-                .map(creature_to_potions)
-                .fold((0, 0), |(sum, count), v| v.map_or((sum, count), |v| (sum + v, count + 1)));
-            sum + match count {
-                2 => 2,
-                3 => 6,
-                _ => 0,
+                .map(|source| manhattan(source, target))
+                .min()
+                .unwrap();
+            if check(distance) {
+                Some((*target, distance))
+            } else {
+                None
             }
         })
-        .sum()
+        .min_by_key(|(_, distance)| *distance)
+}
+
+/// # Panics
+#[must_use]
+pub fn solve(data: &[u8]) -> usize {
+    let mut stars = data
+        .split(|&c| c == b'\n')
+        .enumerate()
+        .flat_map(|(r, row)| {
+            row.iter()
+                .enumerate()
+                .filter_map(move |(c, &tile)| if tile == b'*' { Some((r, c)) } else { None })
+        })
+        .collect::<HashSet<_>>();
+    let size = stars.len();
+
+    let start_star = stars.iter().copied().next().unwrap();
+    let mut current = HashSet::from([start_star]);
+    stars.remove(&start_star);
+
+    let mut total = 0;
+    while let Some((star, distance)) = min_distance(&stars, &current, |_| true) {
+        total += distance;
+
+        stars.remove(&star);
+        current.insert(star);
+    }
+
+    total + size
+}
+
+pub use solve as part_1;
+pub use solve as part_2;
+
+/// # Panics
+#[must_use]
+pub fn part_3(data: &[u8]) -> usize {
+    let mut stars = data
+        .split(|&c| c == b'\n')
+        .enumerate()
+        .flat_map(|(r, row)| {
+            row.iter()
+                .enumerate()
+                .filter_map(move |(c, &tile)| if tile == b'*' { Some((r, c)) } else { None })
+        })
+        .collect::<HashSet<_>>();
+
+    let mut brilliants = std::iter::from_fn(move || {
+        if stars.is_empty() {
+            return None;
+        }
+
+        if stars.len() == 1 {
+            stars.clear();
+            return Some(0);
+        }
+
+        let start_star = stars.iter().copied().next().unwrap();
+        let mut current = HashSet::from([start_star]);
+        stars.remove(&start_star);
+
+        let mut total = 0;
+        while let Some((star, distance)) =
+            min_distance(&stars, &current, |distance| distance < 6)
+        {
+            total += distance;
+
+            stars.remove(&star);
+            current.insert(star);
+        }
+
+        Some(total + current.len())
+    })
+    .fuse()
+    .collect::<Vec<_>>();
+
+    brilliants.sort_unstable();
+
+    brilliants.into_iter().rev().take(3).product()
 }
 
 #[cfg(test)]
@@ -54,16 +112,45 @@ mod tests {
 
     #[test]
     fn test_part_1() {
-        assert_eq!(5, part_1(b"ABBAC"));
+        assert_eq!(
+            16,
+            part_1(
+                br"*...*
+..*..
+.....
+.....
+*.*.."
+            )
+        );
     }
 
     #[test]
     fn test_part_2() {
-        assert_eq!(28, part_2(b"AxBCDDCAxD"));
+        assert_eq!(
+            16,
+            part_2(
+                br"*...*
+..*..
+.....
+.....
+*.*.."
+            )
+        );
     }
 
     #[test]
     fn test_part_3() {
-        assert_eq!(30, part_3(b"xBxAAABCDxCC"));
+        assert_eq!(
+            15624,
+            part_3(
+                br".......................................
+..*.......*...*.....*...*......**.**...
+....*.................*.......*..*..*..
+..*.........*.......*...*.....*.....*..
+......................*........*...*...
+..*.*.....*...*.....*...*........*.....
+......................................."
+            )
+        );
     }
 }
