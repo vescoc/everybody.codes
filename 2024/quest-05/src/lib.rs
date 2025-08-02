@@ -114,6 +114,8 @@ pub fn part_3(data: &[u8]) -> u64 {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unreadable_literal)]
+    
     use super::*;
 
     #[test]

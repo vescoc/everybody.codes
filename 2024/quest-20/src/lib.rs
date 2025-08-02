@@ -239,6 +239,8 @@ pub fn part_3(data: &[u8]) -> usize {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unreadable_literal)]
+    
     use super::*;
 
     #[test]
@@ -329,7 +331,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
+    #[ignore = "bho"]
     fn test_part_3() {
         assert_eq!(
             768790,

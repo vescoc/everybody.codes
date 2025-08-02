@@ -45,7 +45,7 @@ use Part1 as Part2;
 struct Part3;
 impl Solve for Part3 {
     fn table_size(notes: impl Iterator<Item = usize>) -> usize {
-        (notes.max().unwrap() + 1) / 2 + 100
+        notes.max().unwrap().div_ceil(2) + 100
     }
 
     fn beetles(idx: usize, table: &[usize]) -> usize {

@@ -1,11 +1,25 @@
 [package]
 name = "quest-15"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
+
+[package.metadata.everybody_codes]
+event = 2024
+quest = 15
 
 [dev-dependencies]
-criterion = { version = "0.5.1", features = ["html_reports"] }
+criterion = { version = "0.7", features = ["html_reports"] }
+
+[build-dependencies]
+everybody-codes = { path = "../../common/everybody-codes" }
 
 [[bench]]
 name = "bench"
 harness = false
+
+[lints.clippy]
+pedantic = "deny"
+
+[profile.release]
+debug = true
+codegen-units = 1

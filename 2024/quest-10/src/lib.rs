@@ -1,7 +1,6 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 
 /// # Panics
-#[allow(clippy::match_on_vec_items)]
 #[must_use]
 pub fn part_1(data: &[u8]) -> String {
     let mut data = data.to_vec();
@@ -174,7 +173,6 @@ fn decode_runes<const THUMB: usize>(
     check
 }
 
-#[allow(clippy::match_on_vec_items)]
 fn decode_unknown<const THUMB: usize>(
     data: &mut [u8],
     mut check: VecDeque<(usize, usize)>,
@@ -214,7 +212,7 @@ fn decode_unknown<const THUMB: usize>(
         }
 
         if let Some((mark_c, mark_r)) = mark.pop() {
-            let mut singles = map.iter().filter(|(_, &v)| v == 1);
+            let mut singles = map.iter().filter(|&(_, &v)| v == 1);
             if let Some((&l, _)) = singles.next() {
                 if singles.next().is_none() {
                     assert!(l != b'.');

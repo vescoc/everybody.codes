@@ -1,3 +1,5 @@
+#![allow(clippy::unreadable_literal)]
+
 use quest_08 as quest;
 
 fn main() {

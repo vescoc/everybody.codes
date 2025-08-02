@@ -3,13 +3,27 @@ name = "quest-18"
 version = "0.1.0"
 edition = "2021"
 
+[package.metadata.everybody_codes]
+event = 2024
+quest = 18
+
 [dependencies]
 bytecount = "0.6.8"
 rayon = "1.10.0"
 
 [dev-dependencies]
-criterion = { version = "0.5.1", features = ["html_reports"] }
+criterion = { version = "0.7", features = ["html_reports"] }
+
+[build-dependencies]
+everybody-codes = { path = "../../common/everybody-codes" }
 
 [[bench]]
 name = "bench"
 harness = false
+
+[lints.clippy]
+pedantic = "deny"
+
+[profile.release]
+debug = true
+codegen-units = 1

@@ -124,7 +124,7 @@ pub fn part_2(data: &[u8]) -> usize {
             inscription
                 .iter()
                 .enumerate()
-                .filter(|(i, &c)| match_horizontally(&words, inscription, *i, c))
+                .filter(|(i, c)| match_horizontally(&words, inscription, *i, **c))
         })
         .count()
 }
@@ -149,7 +149,7 @@ pub fn part_3(data: &[u8]) -> usize {
             inscription
                 .iter()
                 .enumerate()
-                .filter(move |(x, &c)| match_hv(words, inscriptions, inscription, *x, y, c))
+                .filter(move |(x, c)| match_hv(words, inscriptions, inscription, *x, y, **c))
         })
         .count()
 }

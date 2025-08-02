@@ -26,6 +26,7 @@ struct Freezed;
 struct Modifiable;
 
 #[derive(Default)]
+#[allow(clippy::struct_field_names)]
 struct Dictionary<const SIZE: usize, S> {
     next: usize,
     dictionary: HashMap<[u8; SIZE], usize>,
@@ -197,6 +198,8 @@ pub fn part_3_matrix<const SIZE: usize>(data: &[u8]) -> u32 {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unreadable_literal)]
+    
     use super::*;
 
     #[test]

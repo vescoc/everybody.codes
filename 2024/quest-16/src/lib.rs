@@ -125,7 +125,7 @@ pub fn part_3(data: &[u8]) -> String {
 
     let (positions, sequences) = parse(data);
 
-    let middle = (STEPS * 2 + 1) / 2 + 1;
+    let middle = (STEPS * 2).div_ceil(2) + 1;
 
     let mut current_max = [usize::MIN; STEPS * 2 + 3];
     let mut current_min = [usize::MAX; STEPS * 2 + 3];
@@ -170,6 +170,8 @@ pub fn part_3(data: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unreadable_literal)]
+    
     use super::*;
 
     #[test]

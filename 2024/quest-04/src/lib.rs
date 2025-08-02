@@ -73,11 +73,7 @@ fn hammer(data: &[u8]) -> u32 {
     nails
         .iter()
         .map(|&nail| {
-            if nail < median {
-                median - nail
-            } else {
-                nail - median
-            }
+            median.abs_diff(nail)
         })
         .sum()
 }

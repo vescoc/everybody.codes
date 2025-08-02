@@ -104,14 +104,17 @@ pub fn solve<const FROM: u8, const TO: u8>(data: &[u8]) -> usize {
     unreachable!()
 }
 
+#[must_use]
 pub fn part_1(data: &[u8]) -> usize {
     solve::<b'S', b'E'>(data)
 }
 
+#[must_use]
 pub fn part_2(data: &[u8]) -> usize {
     solve::<b'S', b'E'>(data)
 }
 
+#[must_use]
 pub fn part_3(data: &[u8]) -> usize {
     solve::<b'E', b'S'>(data)
 }
