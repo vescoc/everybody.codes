@@ -1,6 +1,6 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 
-use quest_12 as quest;
+use quest_2024_12 as quest;
 
 fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("part 1", |b| {

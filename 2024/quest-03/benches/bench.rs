@@ -1,6 +1,6 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 
-use quest_03 as quest;
+use quest_2024_03 as quest;
 
 fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("part 1", |b| b.iter(|| quest::part_1(include_bytes!("../data/part_1"))));

@@ -1,4 +1,4 @@
-use quest_03 as quest;
+use quest_2024_03 as quest;
 
 fn main() {
     println!("part 1: {}", quest::part_1(include_bytes!("../data/part_1")));

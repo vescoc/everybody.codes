@@ -1,0 +1,7 @@
+#+title: Everybody Codes
+#+author: Claudio Vesco
+#+startup: indent logdrawer
+#+options: d:logbook
+
+* Everybody Codes
+

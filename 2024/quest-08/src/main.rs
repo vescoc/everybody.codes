@@ -1,6 +1,6 @@
 #![allow(clippy::unreadable_literal)]
 
-use quest_08 as quest;
+use quest_2024_08 as quest;
 
 fn main() {
     println!(

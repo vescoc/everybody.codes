@@ -1,25 +1,21 @@
 [package]
-name = "quest-15"
-version = "0.1.0"
-edition = "2024"
+name = "quest-2024-15"
+version.workspace = true
+edition.workspace = true
 
 [package.metadata.everybody_codes]
 event = 2024
 quest = 15
 
 [dev-dependencies]
-criterion = { version = "0.7", features = ["html_reports"] }
+criterion.workspace = true
 
 [build-dependencies]
-everybody-codes = { path = "../../common/everybody-codes" }
+everybody-codes.workspace = true
 
 [[bench]]
 name = "bench"
 harness = false
 
-[lints.clippy]
-pedantic = "deny"
-
-[profile.release]
-debug = true
-codegen-units = 1
+[lints]
+workspace = true

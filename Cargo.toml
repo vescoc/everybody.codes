@@ -1,0 +1,61 @@
+[workspace]
+members = [
+    "common/everybody-codes",
+    
+    "2024/quest-01",
+    "2024/quest-02",
+    "2024/quest-03",
+    "2024/quest-04",
+    "2024/quest-05",
+    "2024/quest-06",
+    "2024/quest-07",
+    "2024/quest-08",
+    "2024/quest-09",
+    "2024/quest-10",
+    "2024/quest-11",
+    "2024/quest-12",
+    "2024/quest-13",
+    "2024/quest-14",
+    "2024/quest-15",
+    "2024/quest-16",
+    "2024/quest-17",
+    "2024/quest-18",
+    "2024/quest-19",
+    "2024/quest-20",
+    
+    "2024/quest-21",
+]
+resolver = "3"
+
+[workspace.package]
+edition = "2024"
+license = "MIT or Apache-2.0"
+readme = "README.org"
+version = "0.1.0"
+authors = ["vescoc"]
+
+[workspace.dependencies]
+aes = "0.8.4"
+bytecount = "0.6.8"
+cbc = { version = "0.1.2", features = ["std"] }
+dirs = "6.0.0"
+hashbrown = "0.15.1"
+hex = "0.4.3"
+nalgebra = "0.33.2"
+num = "0.4.3"
+rayon = "1.10.0"
+reqwest = { version = "0.12.22", features = ["blocking", "json"] }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.142"
+thiserror = "2.0.12"
+toml = "0.9.4"
+criterion = { version = "0.7", features = ["html_reports"] }
+
+everybody-codes = { path = "common/everybody-codes" }
+
+[workspace.lints.clippy]
+pedantic = "deny"
+
+[profile.release]
+debug = true
+codegen-units = 1

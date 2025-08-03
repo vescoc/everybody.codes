@@ -1,4 +1,4 @@
-use quest_02 as quest;
+use quest_2024_02 as quest;
 
 fn main() {
     println!(
