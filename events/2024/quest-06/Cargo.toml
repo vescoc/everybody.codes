@@ -1,0 +1,23 @@
+[package]
+name = "event-2024-06"
+version.workspace = true
+edition.workspace = true
+
+[package.metadata.everybody_codes]
+event = 2024
+quest = 6
+
+[dependencies]
+
+[dev-dependencies]
+criterion.workspace = true
+
+[build-dependencies]
+everybody-codes.workspace = true
+
+[[bench]]
+name = "bench"
+harness = false
+
+[lints]
+workspace = true

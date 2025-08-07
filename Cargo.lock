@@ -391,6 +391,184 @@ dependencies = [
 ]
 
 [[package]]
+name = "event-2024-01"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2024-02"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+ "rayon",
+]
+
+[[package]]
+name = "event-2024-03"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2024-04"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2024-05"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+ "hashbrown",
+]
+
+[[package]]
+name = "event-2024-06"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2024-07"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+ "rayon",
+]
+
+[[package]]
+name = "event-2024-08"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2024-09"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2024-10"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2024-11"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+ "nalgebra",
+]
+
+[[package]]
+name = "event-2024-12"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+ "rayon",
+]
+
+[[package]]
+name = "event-2024-13"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2024-14"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+ "rayon",
+]
+
+[[package]]
+name = "event-2024-15"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2024-16"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+ "num",
+ "rayon",
+]
+
+[[package]]
+name = "event-2024-17"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2024-18"
+version = "0.1.0"
+dependencies = [
+ "bytecount",
+ "criterion",
+ "everybody-codes",
+ "rayon",
+]
+
+[[package]]
+name = "event-2024-19"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2024-20"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+ "rayon",
+]
+
+[[package]]
+name = "event-2024-21"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+]
+
+[[package]]
 name = "everybody-codes"
 version = "0.1.0"
 dependencies = [
@@ -1217,184 +1395,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "02b3e5e68a3a1a02aad3ec490a98007cbc13c37cbe84a3cd7b8e406d76e7f778"
 dependencies = [
  "unicode-ident",
-]
-
-[[package]]
-name = "quest-2024-01"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "everybody-codes",
-]
-
-[[package]]
-name = "quest-2024-02"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "everybody-codes",
- "rayon",
-]
-
-[[package]]
-name = "quest-2024-03"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "everybody-codes",
-]
-
-[[package]]
-name = "quest-2024-04"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "everybody-codes",
-]
-
-[[package]]
-name = "quest-2024-05"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "everybody-codes",
- "hashbrown",
-]
-
-[[package]]
-name = "quest-2024-06"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "everybody-codes",
-]
-
-[[package]]
-name = "quest-2024-07"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "everybody-codes",
- "rayon",
-]
-
-[[package]]
-name = "quest-2024-08"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "everybody-codes",
-]
-
-[[package]]
-name = "quest-2024-09"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "everybody-codes",
-]
-
-[[package]]
-name = "quest-2024-10"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "everybody-codes",
-]
-
-[[package]]
-name = "quest-2024-11"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "everybody-codes",
- "nalgebra",
-]
-
-[[package]]
-name = "quest-2024-12"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "everybody-codes",
- "rayon",
-]
-
-[[package]]
-name = "quest-2024-13"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "everybody-codes",
-]
-
-[[package]]
-name = "quest-2024-14"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "everybody-codes",
- "rayon",
-]
-
-[[package]]
-name = "quest-2024-15"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "everybody-codes",
-]
-
-[[package]]
-name = "quest-2024-16"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "everybody-codes",
- "num",
- "rayon",
-]
-
-[[package]]
-name = "quest-2024-17"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "everybody-codes",
-]
-
-[[package]]
-name = "quest-2024-18"
-version = "0.1.0"
-dependencies = [
- "bytecount",
- "criterion",
- "everybody-codes",
- "rayon",
-]
-
-[[package]]
-name = "quest-2024-19"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "everybody-codes",
-]
-
-[[package]]
-name = "quest-2024-20"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "everybody-codes",
- "rayon",
-]
-
-[[package]]
-name = "quest-2024-21"
-version = "0.1.0"
-dependencies = [
- "criterion",
 ]
 
 [[package]]
