@@ -1,0 +1,30 @@
+[package]
+name = "story-1-03"
+version.workspace = true
+edition.workspace = true
+
+[features]
+default = []
+
+rayon = ["dep:rayon"]
+
+[package.metadata.everybody_codes]
+event = 1
+quest = 3
+
+[dependencies]
+num.workspace = true
+rayon = { workspace = true, optional = true }
+
+[dev-dependencies]
+criterion.workspace = true
+
+[build-dependencies]
+everybody-codes.workspace = true
+
+[[bench]]
+name = "bench"
+harness = false
+
+[lints]
+workspace = true

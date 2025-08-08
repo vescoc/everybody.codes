@@ -27,6 +27,7 @@ members = [
 
     "stories/1/quest-01",
     "stories/1/quest-02",
+    "stories/1/quest-03",
 ]
 resolver = "3"
 

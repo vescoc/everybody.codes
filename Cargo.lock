@@ -1766,6 +1766,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "story-1-03"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+ "num",
+ "rayon",
+]
+
+[[package]]
 name = "subtle"
 version = "2.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
