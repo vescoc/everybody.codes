@@ -25,9 +25,13 @@ members = [
     
     "events/2024/quest-21",
 
+    # Story 1
     "stories/1/quest-01",
     "stories/1/quest-02",
     "stories/1/quest-03",
+
+    # Story 2
+    "stories/2/quest-01",
 ]
 resolver = "3"
 
@@ -54,6 +58,7 @@ serde_json = "1.0.142"
 thiserror = "2.0.12"
 toml = "0.9.4"
 criterion = { version = "0.7", features = ["html_reports"] }
+itertools = "0.14.0"
 
 everybody-codes = { path = "common/everybody-codes" }
 
