@@ -3,9 +3,9 @@ use std::collections::VecDeque;
 /// # Panics
 #[must_use]
 pub fn part_1(data: &str) -> usize {
-    let mut balloons = data.chars();
+    let mut balloons = data.as_bytes().iter();
 
-    for (count, fluffbolt) in "RGB".chars().cycle().enumerate() {
+    for (count, fluffbolt) in b"RGB".iter().cycle().enumerate() {
         let mut hit = false;
         loop {
             match balloons.next() {
@@ -28,31 +28,37 @@ pub fn part_1(data: &str) -> usize {
 #[allow(clippy::maybe_infinite_iter)]
 #[must_use]
 pub fn part_2<const REPEAT: usize>(data: &str) -> usize {
-    let mut left = std::iter::repeat_n(data, REPEAT)
-        .flat_map(|data| data.chars())
+    let mut left = std::iter::repeat_n(data.as_bytes(), REPEAT)
+        .flatten()
         .take(data.len() * REPEAT / 2)
         .collect::<VecDeque<_>>();
-    let mut right = std::iter::repeat_n(data, REPEAT)
-        .flat_map(|data| data.chars())
+    let mut right = std::iter::repeat_n(data.as_bytes(), REPEAT)
+        .flatten()
         .skip(data.len() * REPEAT / 2)
         .collect::<VecDeque<_>>();
 
-    "RGB"
-        .chars()
+    b"RGB"
+        .iter()
         .cycle()
         .take_while(move |&fluffbolt| {
             if left.is_empty() && right.is_empty() {
                 false
             } else {
-                if left.len() > right.len() {
-                    left.pop_front();
-                } else if right.len() > left.len() {
-                    left.push_back(right.pop_front().unwrap());
-                    left.pop_front();
-                } else if let Some(balloon) = left.pop_front()
-                    && balloon == fluffbolt
-                {
-                    right.pop_front();
+                match left.len().cmp(&right.len()) {
+                    std::cmp::Ordering::Greater => {
+                        left.pop_front();
+                    }
+                    std::cmp::Ordering::Less => {
+                        left.push_back(right.pop_front().unwrap());
+                        left.pop_front();
+                    }
+                    std::cmp::Ordering::Equal => {
+                        if let Some(balloon) = left.pop_front()
+                            && balloon == fluffbolt
+                        {
+                            right.pop_front();
+                        }
+                    }
                 }
 
                 true
