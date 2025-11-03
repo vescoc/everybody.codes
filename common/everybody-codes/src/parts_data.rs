@@ -82,49 +82,37 @@ impl<'a> PartsData<'a> {
         
         let input_notes = Client::new_from_config()?.input_notes(self.event, self.quest)?;
 
-        let mut modified = false;
+	let mut modified = false;
+	{
+	    let modified = &mut modified;
+	    let mut write_if_needed = move |need_part, remote_data, local_data, part_path| {
+		if need_part {
+		    if let Some(remote_data) = remote_data {
+			if let Some(local_data) = local_data {
+			    if remote_data != local_data {
+				fs::create_dir_all(data_dir)?;
+				fs::write(part_path, remote_data)?;
+				*modified = true;
+			    }
+			} else {
+			    fs::create_dir_all(data_dir)?;
+			    fs::write(part_path, remote_data)?;
+			    *modified = true;
+			}
+		    } else if local_data.is_none() {
+			fs::create_dir_all(data_dir)?;
+			fs::write(part_path, "")?;
+			*modified = true;			    
+		    }
+		}
 
-        if let Some(remote_data) = input_notes.part_1 && need_part_1 {
-            if let Some(local_data) = part_1_data {
-                if remote_data != local_data {
-                    fs::create_dir_all(data_dir)?;
-                    fs::write(part_1_path, remote_data)?;
-                    modified = true;
-                }
-            } else {
-                fs::create_dir_all(data_dir)?;
-                fs::write(part_1_path, remote_data)?;
-                modified = true;
-            }
-        }
-        
-        if let Some(remote_data) = input_notes.part_2 && need_part_2 {
-            if let Some(local_data) = part_2_data {
-                if remote_data != local_data {
-                    fs::create_dir_all(data_dir)?;
-                    fs::write(part_2_path, remote_data)?;
-                    modified = true;
-                }
-            } else {
-                fs::create_dir_all(data_dir)?;
-                fs::write(part_2_path, remote_data)?;
-                modified = true;
-            }
-        }
-        
-        if let Some(remote_data) = input_notes.part_3 && need_part_3 {
-            if let Some(local_data) = part_3_data {
-                if remote_data != local_data {
-                    fs::create_dir_all(data_dir)?;
-                    fs::write(part_3_path, remote_data)?;
-                    modified = true;
-                }
-            } else {
-                fs::create_dir_all(data_dir)?;
-                fs::write(part_3_path, remote_data)?;
-                modified = true;
-            }
-        }
+		Ok::<(), Error>(())
+	    };
+
+	    write_if_needed(need_part_1, input_notes.part_1, part_1_data, part_1_path)?;
+	    write_if_needed(need_part_2, input_notes.part_2, part_2_data, part_2_path)?;
+	    write_if_needed(need_part_3, input_notes.part_3, part_3_data, part_3_path)?;
+	}
 
         Ok(modified)
     }
