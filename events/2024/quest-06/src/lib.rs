@@ -36,7 +36,7 @@ fn solve(data: &[u8], encode_node: impl Fn(&[u8]) -> &str) -> String {
                         candidate = Some((path.clone(), length, 1));
                     }
                 } else {
-                    queue.push_back((node, path.to_string() + encode_node(node), length + 1));
+                    queue.push_back((node, path.clone() + encode_node(node), length + 1));
                 }
             }
         }
