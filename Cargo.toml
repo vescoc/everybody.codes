@@ -1,7 +1,8 @@
 [workspace]
 members = [
     "common/everybody-codes",
-    
+
+    # Event 2024
     "events/2024/quest-01",
     "events/2024/quest-02",
     "events/2024/quest-03",
@@ -34,6 +35,9 @@ members = [
     "stories/2/quest-01",
     "stories/2/quest-02",
     "stories/2/quest-03",
+    
+    # Event 2025
+    "events/2025/quest-01",
 ]
 resolver = "3"
 
