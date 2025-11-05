@@ -7,6 +7,14 @@ edition.workspace = true
 event = 2025
 quest = 2
 
+[features]
+default = []
+
+simd = []
+
+[dependencies]
+rayon.workspace = true
+
 [dev-dependencies]
 criterion.workspace = true
 
