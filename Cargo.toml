@@ -65,6 +65,7 @@ thiserror = "2.0.12"
 toml = "0.9.4"
 criterion = { version = "0.7", features = ["html_reports"] }
 itertools = "0.14.0"
+heapless = "0.9.1"
 
 everybody-codes = { path = "common/everybody-codes" }
 

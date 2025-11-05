@@ -1,9 +1,13 @@
+#![no_std]
+
+type Vec<T> = heapless::Vec<T, 256>;
+
 /// # Panics
 #[must_use]
 pub fn part_1(data: &str) -> &str {
-    let (list, moves) = data.split_once("\n\n").expect("invalid data");
+    let (names, moves) = data.split_once("\n\n").expect("invalid data");
 
-    let list = list.split(',').collect::<Vec<_>>();
+    let list = names.split(',').collect::<Vec<_>>();
 
     let index = moves.split(',').fold(0usize, |current, current_move| {
         let mut mv = current_move.chars();
@@ -22,9 +26,9 @@ pub fn part_1(data: &str) -> &str {
 /// # Panics
 #[must_use]
 pub fn part_2(data: &str) -> &str {
-    let (list, moves) = data.split_once("\n\n").expect("invalid data");
+    let (names, moves) = data.split_once("\n\n").expect("invalid data");
 
-    let list = list.split(',').collect::<Vec<_>>();
+    let list = names.split(',').collect::<Vec<_>>();
 
     let index = moves.split(',').fold(0usize, |current, current_move| {
         let mut mv = current_move.chars();
@@ -50,9 +54,9 @@ pub fn part_2(data: &str) -> &str {
 /// # Panics
 #[must_use]
 pub fn part_3(data: &str) -> &str {
-    let (list, moves) = data.split_once("\n\n").expect("invalid data");
+    let (names, moves) = data.split_once("\n\n").expect("invalid data");
 
-    let mut list = list.split(',').collect::<Vec<_>>();
+    let mut list = names.split(',').collect::<Vec<_>>();
     for current_move in moves.split(',') {
         let mut mv = current_move.chars();
         let dir = mv.next();
