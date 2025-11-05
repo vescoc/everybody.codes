@@ -38,6 +38,7 @@ members = [
     
     # Event 2025
     "events/2025/quest-01",
+    "events/2025/quest-02",
 ]
 resolver = "3"
 
