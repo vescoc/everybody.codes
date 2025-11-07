@@ -87,7 +87,7 @@ mod tests {
 R3,L2,R3,L1"
             ),
             "Fyrryn",
-        )
+        );
     }
 
     #[test]
@@ -99,7 +99,7 @@ R3,L2,R3,L1"
 R3,L2,R3,L1"
             ),
             "Elarzris",
-        )
+        );
     }
 
     #[test]
@@ -111,6 +111,6 @@ R3,L2,R3,L1"
 R3,L2,R3,L3"
             ),
             "Drakzyph",
-        )
+        );
     }
 }

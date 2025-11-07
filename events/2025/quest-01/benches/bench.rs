@@ -11,13 +11,13 @@ const PART_3: &str = include_str!("../data/part_3");
 fn criterion_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("event-2025-01");
     group.bench_function("part 1", |b| {
-        b.iter(|| hint::black_box(event::part_1(hint::black_box(PART_1))))
+        b.iter(|| hint::black_box(event::part_1(hint::black_box(PART_1))));
     });
     group.bench_function("part 2", |b| {
-        b.iter(|| hint::black_box(event::part_2(hint::black_box(PART_2))))
+        b.iter(|| hint::black_box(event::part_2(hint::black_box(PART_2))));
     });
     group.bench_function("part 3", |b| {
-        b.iter(|| hint::black_box(event::part_3(hint::black_box(PART_3))))
+        b.iter(|| hint::black_box(event::part_3(hint::black_box(PART_3))));
     });
     group.finish();
 }

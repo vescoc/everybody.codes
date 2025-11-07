@@ -20,6 +20,7 @@ impl fmt::Display for Complex {
 }
 
 impl Complex {
+    /// # Errors
     pub fn parse(data: &str) -> Result<Self, &'static str> {
         if let Some((x, y)) = data.split_once(',') {
             let mut x = x.chars();
@@ -134,6 +135,7 @@ mod tests {
         assert_eq!(part_2("A=[35300,-64910]"), 4076);
     }
 
+    #[allow(clippy::unreadable_literal)]
     #[test]
     fn test_part_3() {
         assert_eq!(part_3("A=[35300,-64910]"), 406954);
