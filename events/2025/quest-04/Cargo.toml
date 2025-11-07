@@ -9,7 +9,6 @@ quest = 4
 
 [dependencies]
 gcd.workspace = true
-itertools.workspace = true
 
 [dev-dependencies]
 criterion.workspace = true

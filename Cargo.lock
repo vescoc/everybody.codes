@@ -578,7 +578,6 @@ dependencies = [
  "criterion",
  "everybody-codes",
  "gcd",
- "itertools 0.14.0",
 ]
 
 [[package]]

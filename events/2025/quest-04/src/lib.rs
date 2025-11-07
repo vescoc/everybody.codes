@@ -1,34 +1,57 @@
 use gcd::Gcd;
-use itertools::Itertools;
+
+trait Chunks2<I: Iterator> {
+    fn chunks2(self) -> Chunks2Impl<I>;
+}
+
+struct Chunks2Impl<I: Iterator> {
+    iter: std::iter::Fuse<I>,
+}
+
+impl<I: Iterator> Chunks2<I> for I {
+    fn chunks2(self) -> Chunks2Impl<I> {
+        Chunks2Impl { iter: self.fuse() }
+    }
+}
+
+impl<T, I: Iterator<Item = T>> Iterator for Chunks2Impl<I> {
+    type Item = [T; 2];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let first = self.iter.next()?;
+        let second = self.iter.next()?;
+
+        Some([first, second])
+    }
+}
 
 /// # Panics
-fn reduce(data: &str) -> Option<((u64, u64), u64)> {
-    data.lines()
-        .map(|gear| ((1, 1), gear.parse::<u64>().expect("invalid gear")))
-        .reduce(|((n_1, d_1), gear_1), ((n_2, d_2), gear_2)| {
-            let n = n_1 * n_2 * gear_1;
-            let d = d_1 * d_2 * gear_2;
-            let div = n.gcd(d);
-            ((n / div, d / div), gear_2)
-        })
+fn solve(data: &str, f: impl FnOnce(u64, u64) -> u64) -> u64 {
+    let (first, last) = data
+        .lines()
+        .map(|gear| gear.parse::<u64>().expect("invalid gear"))
+        .fold((None, None), |(first, _), current| {
+            if first.is_some() {
+                (first, Some(current))
+            } else {
+                (Some(current), Some(current))
+            }
+        });
+
+    f(first.unwrap(), last.unwrap())
 }
 
 /// # Panics
 #[must_use]
 pub fn part_1(data: &str) -> u64 {
-    reduce(data).map(|((n, d), _)| 2025 * n / d).unwrap()
+    solve(data, |n, d| 2025 * n / d)
 }
 
 /// # Panics
 #[allow(clippy::unreadable_literal)]
 #[must_use]
 pub fn part_2(data: &str) -> u64 {
-    reduce(data)
-        .map(|((n, d), _)| {
-            let d = 10000000000000 * d;
-            d / n + u64::from(d % n != 0)
-        })
-        .unwrap()
+    solve(data, |n, d| (10000000000000 * d).div_ceil(n))
 }
 
 /// # Panics
@@ -40,12 +63,8 @@ pub fn part_3(data: &str) -> u64 {
             gear.split('|')
                 .map(|gear| gear.parse::<u64>().expect("invalid gear"))
         })
-        .chunks(2)
-        .into_iter()
-        .fold((1, 1), |(n, d), mut chunk| {
-            let gear_a = chunk.next().unwrap();
-            let gear_b = chunk.next().unwrap();
-
+        .chunks2()
+        .fold((100, 1), |(n, d), [gear_a, gear_b]| {
             let n = n * gear_a;
             let d = d * gear_b;
 
@@ -54,7 +73,7 @@ pub fn part_3(data: &str) -> u64 {
             (n / div, d / div)
         });
 
-    100 * n / d
+    n / d
 }
 
 #[cfg(test)]
