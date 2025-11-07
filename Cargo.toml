@@ -40,6 +40,7 @@ members = [
     "events/2025/quest-01",
     "events/2025/quest-02",
     "events/2025/quest-03",
+    "events/2025/quest-04",
 ]
 resolver = "3"
 
@@ -68,6 +69,7 @@ toml = "0.9.4"
 criterion = { version = "0.7", features = ["html_reports"] }
 itertools = "0.14.0"
 heapless = "0.9.1"
+gcd = "2.3.0"
 
 everybody-codes = { path = "common/everybody-codes" }
 

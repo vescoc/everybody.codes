@@ -1,0 +1,25 @@
+[package]
+name = "event-2025-04"
+version.workspace = true
+edition.workspace = true
+
+[package.metadata.everybody_codes]
+event = 2025
+quest = 4
+
+[dependencies]
+gcd.workspace = true
+itertools.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+
+[build-dependencies]
+everybody-codes.workspace = true
+
+[[bench]]
+name = "bench"
+harness = false
+
+[lints]
+workspace = true
