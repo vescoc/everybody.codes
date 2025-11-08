@@ -9,7 +9,7 @@ const PART_2: &str = include_str!("../data/part_2");
 const PART_3: &str = include_str!("../data/part_3");
 
 fn criterion_benchmark(c: &mut Criterion) {
-    let mut group = c.benchmark_group("event-2025-01");
+    let mut group = c.benchmark_group("event-2025-03");
     group.bench_function("part 1", |b| {
         b.iter(|| hint::black_box(event::part_1(hint::black_box(PART_1))));
     });
