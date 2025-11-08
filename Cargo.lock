@@ -581,6 +581,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "event-2025-05"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+ "itertools 0.14.0",
+]
+
+[[package]]
 name = "everybody-codes"
 version = "0.1.0"
 dependencies = [
