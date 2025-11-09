@@ -1,4 +1,4 @@
-trait MinMax<T> : Iterator<Item = T>
+trait MinMax<T>: Iterator<Item = T>
 where
     Self: Sized,
     T: Copy + PartialOrd,
@@ -15,7 +15,7 @@ where
             } else {
                 min.replace(value);
             }
-            
+
             if let Some(ref mut max) = max {
                 if value > *max {
                     *max = value;
@@ -33,7 +33,8 @@ impl<T, I> MinMax<T> for I
 where
     I: Iterator<Item = T>,
     T: Copy + PartialOrd,
-{}
+{
+}
 
 #[derive(Debug)]
 struct Level {
@@ -136,9 +137,11 @@ pub fn part_1(data: &str) -> u64 {
 /// # Panics
 #[must_use]
 pub fn part_2(data: &str) -> u64 {
-    let (min, max) = data.lines().map(quality_value).minmax().expect("invalid data");
-
-    max - min
+    data.lines()
+        .map(quality_value)
+        .minmax()
+        .map(|(min, max)| max - min)
+        .expect("invalid data")
 }
 
 /// # Panics
