@@ -1,0 +1,12 @@
+[package]
+name = "mem"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+unsound = []
+
+[dependencies]
+
+[lints]
+workspace = true

@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "common/everybody-codes",
+    "common/mem",
 
     # Event 2024
     "events/2024/quest-01",
@@ -73,6 +74,7 @@ heapless = "0.9.1"
 gcd = "2.3.0"
 
 everybody-codes = { path = "common/everybody-codes" }
+mem = { path = "common/mem" }
 
 [workspace.lints.clippy]
 pedantic = "deny"

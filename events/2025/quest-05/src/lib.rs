@@ -1,3 +1,5 @@
+#![no_std]
+
 trait MinMax<T>: Iterator<Item = T>
 where
     Self: Sized,
@@ -53,79 +55,100 @@ fn make_level(a: Option<u8>, b: u8, c: Option<u8>) -> u64 {
         + u64::from(c.unwrap_or_default())
 }
 
-fn fishbone(data: &str) -> (&str, Vec<Level>) {
+fn fishbone<'m, 'a>(
+    mem: &mut mem::Mem<'m>,
+    data: &'a str,
+) -> Result<(&'a str, &'m mut [&'m mut Level]), mem::Oom> {
     let (id, numbers) = data.split_once(':').expect("invalid data");
 
-    let mut fishbone = Vec::with_capacity(64);
+    let mut len = 0;
+    let mut fishbone: [Option<&mut Level>; 64] = const { [const { None }; 64] };
     for number in numbers
         .split(',')
         .map(|number| number.parse().expect("invalid number"))
     {
         let mut found = false;
-        for Level {
-            left,
-            center,
-            right,
-        } in &mut fishbone
-        {
-            if left.is_none() && number < *center {
-                *left = Some(number);
+        for level in &mut fishbone[0..len] {
+            let level = level.as_mut().unwrap();
+
+            if level.left.is_none() && number < level.center {
+                level.left = Some(number);
                 found = true;
                 break;
-            } else if right.is_none() && number > *center {
-                *right = Some(number);
+            } else if level.right.is_none() && number > level.center {
+                level.right = Some(number);
                 found = true;
                 break;
             }
         }
 
         if !found {
-            fishbone.push(Level {
+            let level = mem.alloc(Level {
                 left: None,
                 center: number,
                 right: None,
-            });
+            })?;
+            fishbone[len] = Some(level);
+            len += 1;
         }
     }
 
-    (id, fishbone)
+    let result = mem.array_alloc(len, |i| fishbone[i].take().unwrap())?;
+
+    Ok((id, result))
 }
 
 /// # Panics
-#[must_use]
-fn sword(data: &str) -> (u64, u64, Vec<u64>) {
-    let (id, fishbone) = fishbone(data);
+fn sword<'m>(mem: &mut mem::Mem<'m>, data: &str) -> Result<(u64, &'m mut [u64], u64), mem::Oom> {
+    let mut pool = [core::mem::MaybeUninit::uninit(); const {
+        core::mem::size_of::<Level>() * 64 + core::mem::size_of::<&mut [Level]>() * 64
+    }];
 
-    let mut levels = Vec::with_capacity(8);
-    let mut quality = 0;
-    for Level {
-        left,
-        center,
-        right,
-    } in fishbone
-    {
-        levels.push(make_level(left, center, right));
+    mem::Mem::with(&mut pool, |mut scratch| {
+        let (id, fishbone) = fishbone(&mut scratch, data)?;
 
-        quality = quality * (if center < 10 { 10 } else { 100 }) + u64::from(center);
-    }
+        let mut len = 0;
+        let mut levels = [0u64; 16];
+        let mut quality = 0;
+        for Level {
+            left,
+            center,
+            right,
+        } in fishbone
+        {
+            levels[len] = make_level(*left, *center, *right);
+            len += 1;
 
-    (id.parse().expect("invalid id"), quality, levels)
+            quality = quality * (if *center < 10 { 10 } else { 100 }) + u64::from(*center);
+        }
+
+        let levels = mem.array_alloc(len, |i| levels[i])?;
+
+        Ok((quality, levels, id.parse().expect("invalid id")))
+    })
 }
 
 /// # Panics
 #[must_use]
 fn quality_value(data: &str) -> u64 {
-    let (_, fishbone) = fishbone(data);
+    let mut pool = [core::mem::MaybeUninit::uninit(); const {
+        core::mem::size_of::<Level>() * 64 + core::mem::size_of::<&mut [Level]>() * 64
+    }];
 
-    fishbone.into_iter().fold(
-        0,
-        |acc,
-         Level {
-             left: _,
-             center,
-             right: _,
-         }| { acc * (if center < 10 { 10 } else { 100 }) + u64::from(center) },
-    )
+    mem::Mem::with(&mut pool, |mut mem| {
+        let (_, fishbone) = fishbone(&mut mem, data)?;
+
+        Ok(fishbone.iter().fold(
+            0,
+            |acc,
+             Level {
+                 left: _,
+                 center,
+                 right: _,
+             }| { acc * (if *center < 10 { 10 } else { 100 }) + u64::from(*center) },
+        ))
+    })
+    .unwrap()
 }
 
 /// # Panics
@@ -145,22 +168,25 @@ pub fn part_2(data: &str) -> u64 {
 }
 
 /// # Panics
+#[allow(clippy::large_stack_arrays)]
 #[must_use]
 pub fn part_3(data: &str) -> u64 {
-    let mut swords = data.lines().map(sword).collect::<Vec<_>>();
+    let mut pool =
+        [core::mem::MaybeUninit::uninit(); const { core::mem::size_of::<u64>() * 16 * 512 }];
 
-    swords.sort_unstable_by(|(id_a, quality_a, levels_a), (id_b, quality_b, levels_b)| {
-        quality_b
-            .cmp(quality_a)
-            .then_with(|| levels_b.cmp(levels_a))
-            .then_with(|| id_b.cmp(id_a))
-    });
+    mem::Mem::with(&mut pool, |mut mem| {
+        let swords = mem.array_collect_alloc(512, data.lines(), |mem, line| sword(mem, line))?;
 
-    swords
-        .into_iter()
-        .enumerate()
-        .map(|(i, (id, ..))| (i + 1) as u64 * id)
-        .sum()
+        swords.sort_unstable();
+
+        Ok(swords
+            .iter()
+            .rev()
+            .enumerate()
+            .map(|(i, (_, _, id))| (i + 1) as u64 * *id)
+            .sum())
+    })
+    .unwrap()
 }
 
 #[cfg(test)]
