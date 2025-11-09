@@ -7,9 +7,6 @@ edition.workspace = true
 event = 2025
 quest = 5
 
-[dependencies]
-itertools.workspace = true
-
 [dev-dependencies]
 criterion.workspace = true
 

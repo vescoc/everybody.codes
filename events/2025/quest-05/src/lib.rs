@@ -1,4 +1,39 @@
-use itertools::Itertools;
+trait MinMax<T> : Iterator<Item = T>
+where
+    Self: Sized,
+    T: Copy + PartialOrd,
+{
+    fn minmax(self) -> Option<(T, T)> {
+        let mut min = None;
+        let mut max = None;
+
+        for value in self {
+            if let Some(ref mut min) = min {
+                if value < *min {
+                    *min = value;
+                }
+            } else {
+                min.replace(value);
+            }
+            
+            if let Some(ref mut max) = max {
+                if value > *max {
+                    *max = value;
+                }
+            } else {
+                max.replace(value);
+            }
+        }
+
+        Some((min?, max?))
+    }
+}
+
+impl<T, I> MinMax<T> for I
+where
+    I: Iterator<Item = T>,
+    T: Copy + PartialOrd,
+{}
 
 #[derive(Debug)]
 struct Level {
@@ -101,9 +136,7 @@ pub fn part_1(data: &str) -> u64 {
 /// # Panics
 #[must_use]
 pub fn part_2(data: &str) -> u64 {
-    let itertools::MinMaxResult::MinMax(min, max) = data.lines().map(quality_value).minmax() else {
-        panic!("invalid data");
-    };
+    let (min, max) = data.lines().map(quality_value).minmax().expect("invalid data");
 
     max - min
 }
