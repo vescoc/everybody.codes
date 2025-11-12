@@ -44,6 +44,7 @@ members = [
     "events/2025/quest-04",
     "events/2025/quest-05",
     "events/2025/quest-06",
+    "events/2025/quest-07",
 ]
 resolver = "3"
 
