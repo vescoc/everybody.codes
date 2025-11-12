@@ -1,13 +1,17 @@
 #![no_std]
 
+use core::marker::PhantomData;
 use core::mem::{self, MaybeUninit};
+use core::ptr;
 use core::slice;
 
 #[derive(Debug)]
 pub struct Oom;
 
 pub struct Mem<'m> {
-    raw: &'m mut [MaybeUninit<u8>],
+    raw: *mut MaybeUninit<u8>,
+    len: usize,
+    _marker: PhantomData<&'m [MaybeUninit<u8>]>,
 }
 
 impl<'m> Mem<'m> {
@@ -16,16 +20,19 @@ impl<'m> Mem<'m> {
         pool: &'m mut [MaybeUninit<u8>],
         f: impl FnOnce(Mem<'m>) -> Result<T, Oom>,
     ) -> Result<T, Oom> {
-        f(Mem { raw: pool })
+        f(Mem {
+            raw: ptr::from_mut(pool).cast(),
+            len: pool.len(),
+            _marker: PhantomData,
+        })
     }
 
     #[must_use]
     pub const fn free(&self) -> usize {
-        self.raw.len()
+        self.len
     }
-    
+
     /// # Errors
-    #[cfg(feature = "unsound")]
     pub fn alloc_with_scratch<T>(
         &mut self,
         size: usize,
@@ -40,15 +47,26 @@ impl<'m> Mem<'m> {
 
         let raw = mem::take(&mut self.raw);
 
-        let (main, scratch) = raw.split_at_mut(split_at);
+        let (main, scratch) = (raw, unsafe { raw.add(split_at) });
 
-        let mut main = Mem { raw: main };
-        let result = f(&mut main, Mem { raw: scratch });
+        let mut main = Mem {
+            raw: main,
+            len: split_at,
+            _marker: core::marker::PhantomData,
+        };
+        let result = f(
+            &mut main,
+            Mem {
+                raw: scratch,
+                len: size,
+                _marker: PhantomData,
+            },
+        );
 
-        let new_free = main.free();
-        
-        let raw = mem::take(&mut main.raw);    
-        self.raw = unsafe { slice::from_raw_parts_mut(raw.as_mut_ptr(), new_free + size) };
+        let free = main.free();
+        let raw = mem::take(&mut main.raw);
+        self.raw = raw;
+        self.len = free + size;
 
         result
     }
@@ -58,14 +76,19 @@ impl<'m> Mem<'m> {
         self.align::<T>(1)?;
 
         let size = mem::size_of::<T>();
+        let free = self.free();
+        if size > free {
+            return Err(Oom);
+        }
 
         let raw = mem::take(&mut self.raw);
-        let (allocated, raw) = raw.split_at_mut(size);
+        let (allocated, raw) = (raw, unsafe { raw.add(size) });
 
-        let allocated = unsafe { &mut *allocated.as_mut_ptr().cast::<MaybeUninit<T>>() };
+        let allocated = unsafe { &mut *allocated.cast::<MaybeUninit<T>>() };
         let result = allocated.write(value);
 
         self.raw = raw;
+        self.len = free - size;
 
         Ok(result)
     }
@@ -84,11 +107,16 @@ impl<'m> Mem<'m> {
         self.align::<T>(len)?;
 
         let size = mem::size_of::<T>();
+        let total_size = size * len;
+        let free = self.free();
+        if total_size > free {
+            return Err(Oom);
+        }
 
         let raw = mem::take(&mut self.raw);
-        let (allocated, raw) = raw.split_at_mut(size * len);
+        let (allocated, raw) = (raw, unsafe { raw.add(total_size) });
         {
-            let mut ptr = allocated.as_mut_ptr();
+            let mut ptr = allocated;
             for i in 0..len {
                 unsafe { &mut *ptr.cast::<MaybeUninit<T>>() }.write(init(i));
                 ptr = unsafe { ptr.add(size) };
@@ -96,8 +124,9 @@ impl<'m> Mem<'m> {
         }
 
         self.raw = raw;
+        self.len = free - total_size;
 
-        Ok(unsafe { slice::from_raw_parts_mut(allocated.as_mut_ptr().cast::<T>(), len) })
+        Ok(unsafe { slice::from_raw_parts_mut(allocated.cast::<T>(), len) })
     }
 
     /// # Errors
@@ -119,15 +148,24 @@ impl<'m> Mem<'m> {
         self.align::<T>(len)?;
 
         let size = mem::size_of::<T>();
+        let total_size = size * len;
+        let free = self.free();
+        if total_size > free {
+            return Err(Oom);
+        }
 
         let raw = mem::take(&mut self.raw);
-        let (allocated, raw) = raw.split_at_mut(size * len);
+        let (allocated, raw) = (raw, unsafe { raw.add(size * len) });
 
-        let mut main = Mem { raw };
+        let mut main = Mem {
+            raw,
+            len: size * len,
+            _marker: PhantomData,
+        };
 
         let mut oom = false;
-        
-        let mut ptr = allocated.as_mut_ptr();
+
+        let mut ptr = allocated;
 
         let mut count = 0;
         for (i, value) in iter.enumerate() {
@@ -138,7 +176,7 @@ impl<'m> Mem<'m> {
             }
 
             if let Ok(value) = f(&mut main, value) {
-                unsafe { &mut *ptr.cast::<MaybeUninit<T>>()}.write(value);
+                unsafe { &mut *ptr.cast::<MaybeUninit<T>>() }.write(value);
                 ptr = unsafe { ptr.add(size) };
             } else {
                 oom = true;
@@ -147,35 +185,38 @@ impl<'m> Mem<'m> {
         }
 
         let raw = mem::take(&mut main.raw);
-        
+
         self.raw = raw;
+        self.len = main.free();
 
         if oom {
             Err(Oom)
         } else {
-            Ok(unsafe { slice::from_raw_parts_mut(allocated.as_mut_ptr().cast::<T>(), count) })
+            Ok(unsafe { slice::from_raw_parts_mut(allocated.cast::<T>(), count) })
         }
     }
 
     fn align<T>(&mut self, len: usize) -> Result<(), Oom> {
         let size = mem::size_of::<T>();
-        if size * len > self.free() {
+        let free = self.free();
+        if size * len > free {
             return Err(Oom);
         }
 
         let align = mem::align_of::<T>();
 
-        let ptr = self.raw.as_mut_ptr();
+        let ptr = self.raw;
 
         let offset = ptr.align_offset(align);
-        if offset >= self.free() || self.free() - offset < size * len {
+        if offset >= free || free - offset < size * len {
             return Err(Oom);
         }
 
         let raw = mem::take(&mut self.raw);
-        let (_, raw) = raw.split_at_mut(offset);
+        let raw = unsafe { raw.add(offset) };
 
         self.raw = raw;
+        self.len = free - offset;
 
         Ok(())
     }
@@ -290,8 +331,6 @@ mod test {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
-    #[cfg(feature = "unsound")]
     fn test_alloc_with_scratch() {
         let mut pool = [MaybeUninit::uninit(); 4];
 
@@ -306,9 +345,7 @@ mod test {
                         *v = (i + 1) as u8;
                     }
 
-                    let r = mem.alloc(42u8 + arr.iter().sum::<u8>());
-
-                    r
+                    mem.alloc(42u8 + arr.iter().sum::<u8>())
                 })
                 .unwrap();
             assert_eq!(mem.free(), 3);
@@ -320,8 +357,6 @@ mod test {
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)]
-    #[cfg(feature = "unsound")]
     fn test_alloc_with_scratch_simple() {
         let mut pool = [MaybeUninit::uninit(); 4];
 
@@ -333,7 +368,7 @@ mod test {
 
                     let r = mem.alloc(42u8);
 
-                    let _ = mem.alloc(42u8);
+                    let _ = mem.alloc(48u8);
 
                     r
                 })
@@ -344,8 +379,11 @@ mod test {
         .unwrap();
 
         assert_eq!(result, 42);
+
+        assert_eq!(unsafe { pool[0].assume_init_read() }, 42);
+        assert_eq!(unsafe { pool[1].assume_init_read() }, 48);
     }
-    
+
     #[test]
     fn test_struct() {
         #[derive(PartialEq, Debug)]
@@ -392,57 +430,54 @@ mod test {
         assert_eq!(result.left.unwrap().right.unwrap().value, 2);
         assert_eq!(result.right.unwrap().value, 4);
     }
-
+    
     #[test]
     fn test_array_collect_alloc_simple() {
-        let mut pool = [MaybeUninit::uninit(); const { mem::size_of::<usize>() * 10 + mem::size_of::<u8>() * 10 }];
+        let mut pool =
+            [MaybeUninit::uninit();
+                const { mem::size_of::<usize>() * 10 + mem::size_of::<u8>() * 10 }];
 
-        let _ = Mem::with(
-            &mut pool,
-            |mut mem| {
-                let dummy = mem.alloc(());
-                
-                let result = mem.array_collect_alloc(
-                    10,
-                    1..=5,
-                    |_, value| {
-                        Ok(value)
-                    },
-                ).unwrap();
-                
-                assert_eq!(result, [1, 2, 3, 4, 5].as_slice());
+        let _ = Mem::with(&mut pool, |mut mem| {
+            let dummy = mem.alloc(());
 
-                Ok(dummy)
-            },
-        ).unwrap();
+            let result = mem
+                .array_collect_alloc(10, 1..=5, |_, value| Ok(value))
+                .unwrap();
+
+            assert_eq!(result, [1, 2, 3, 4, 5].as_slice());
+
+            Ok(dummy)
+        })
+        .unwrap();
     }
 
     #[test]
     fn test_array_collect_alloc() {
-        let mut pool = [MaybeUninit::uninit(); const { mem::size_of::<usize>() * 10 + mem::size_of::<u64>() * 10 }];
+        let mut pool =
+            [MaybeUninit::uninit();
+                const { mem::size_of::<usize>() * 10 + mem::size_of::<u64>() * 10 }];
 
-        let _ = Mem::with(
-            &mut pool,
-            |mut mem| {
-                let dummy = mem.alloc(());
-                
-                let result = mem.array_collect_alloc(
+        let _ = Mem::with(&mut pool, |mut mem| {
+            let dummy = mem.alloc(());
+
+            let result = mem
+                .array_collect_alloc(
                     10,
                     r"1
 2
 3
 4
-5".lines().map(|line| line.parse::<u8>().unwrap()),
+5"
+                    .lines()
+                    .map(|line| line.parse::<u8>().unwrap()),
+                    |mem, value| mem.alloc(u64::from(value) * 2),
+                )
+                .unwrap();
 
-                    |mem, value| {
-                        mem.alloc(u64::from(value) * 2)
-                    },
-                ).unwrap();
+            assert_eq!(result, [&2, &4, &6, &8, &10].as_slice());
 
-                assert_eq!(result, [&2, &4, &6, &8, &10].as_slice());
-
-                Ok(dummy)
-            },
-        ).unwrap();
+            Ok(dummy)
+        })
+        .unwrap();
     }
 }
