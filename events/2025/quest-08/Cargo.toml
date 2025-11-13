@@ -1,0 +1,27 @@
+[package]
+name = "event-2025-08"
+version.workspace = true
+edition.workspace = true
+
+[package.metadata.everybody_codes]
+event = 2025
+quest = 8
+
+[dependencies]
+itertools.workspace = true
+rayon.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+imageproc.workspace = true
+clap.workspace = true
+
+[build-dependencies]
+everybody-codes.workspace = true
+
+[[bench]]
+name = "bench"
+harness = false
+
+[lints]
+workspace = true

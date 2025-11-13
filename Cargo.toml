@@ -45,6 +45,7 @@ members = [
     "events/2025/quest-05",
     "events/2025/quest-06",
     "events/2025/quest-07",
+    "events/2025/quest-08",
 ]
 resolver = "3"
 
@@ -74,6 +75,8 @@ criterion = { version = "0.7", features = ["html_reports"] }
 itertools = "0.14.0"
 heapless = "0.9.1"
 gcd = "2.3.0"
+imageproc = "0.25"
+clap = { version = "4.5", features = ["derive"] }
 
 everybody-codes = { path = "common/everybody-codes" }
 mem = { path = "common/mem" }
