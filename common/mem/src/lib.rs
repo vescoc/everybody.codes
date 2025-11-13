@@ -159,7 +159,7 @@ impl<'m> Mem<'m> {
 
         let mut main = Mem {
             raw,
-            len: size * len,
+            len: free - size * len,
             _marker: PhantomData,
         };
 

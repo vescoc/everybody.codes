@@ -1,4 +1,4 @@
-#![no_std]
+// #![no_std]
 
 trait MinMax<T>: Iterator<Item = T>
 where
@@ -172,7 +172,7 @@ pub fn part_2(data: &str) -> u64 {
 #[must_use]
 pub fn part_3(data: &str) -> u64 {
     let mut pool =
-        [core::mem::MaybeUninit::uninit(); const { core::mem::size_of::<u64>() * 16 * 512 }];
+        [core::mem::MaybeUninit::uninit(); const { core::mem::size_of::<u64>() * 8 * 1024 }];
 
     mem::Mem::with(&mut pool, |mut mem| {
         let swords = mem.array_collect_alloc(512, data.lines(), |mem, line| sword(mem, line))?;
