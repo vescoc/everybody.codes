@@ -839,6 +839,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "event-2025-09"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+ "rayon",
+]
+
+[[package]]
 name = "everybody-codes"
 version = "0.1.0"
 dependencies = [
