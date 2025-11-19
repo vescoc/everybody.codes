@@ -20,6 +20,12 @@ fn criterion_benchmark(c: &mut Criterion) {
     group.bench_function("part 3", |b| {
         b.iter(|| hint::black_box(event::part_3(hint::black_box(PART_3))));
     });
+    group.bench_function("part 3 nopar", |b| {
+        b.iter(|| hint::black_box(event::part_3_nopar(hint::black_box(PART_3))));
+    });
+    group.bench_function("part 3 par", |b| {
+        b.iter(|| hint::black_box(event::part_3_par(hint::black_box(PART_3))));
+    });
     group.finish();
 }
 
