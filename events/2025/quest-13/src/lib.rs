@@ -1,7 +1,7 @@
 use std::ops;
 
 fn parse_range(line: &str) -> (ops::RangeInclusive<u64>, u64) {
-    let (start, end) = line.split_once('-').expect("invalid range");
+    let (start, end) = line.split_once('-').expect("invalid line");
     let start = start.parse::<u64>().expect("invalid start number range");
     let end = end.parse::<u64>().expect("invalid end number range");
 
@@ -10,42 +10,47 @@ fn parse_range(line: &str) -> (ops::RangeInclusive<u64>, u64) {
 
 fn parse_single(line: &str) -> (ops::RangeInclusive<u64>, u64) {
     let value = line.parse().expect("invalid number");
-    
+
     (ops::RangeInclusive::new(value, value), 1)
 }
 
-#[allow(clippy::cast_possible_truncation)]
+struct Info(Vec<ops::RangeInclusive<u64>>, u64);
+
+impl Default for Info {
+    fn default() -> Self {
+	Self(Vec::with_capacity(512), 0)
+    }
+}
+
+impl Extend<(usize, (ops::RangeInclusive<u64>, u64))> for Info {
+    fn extend<II: IntoIterator<Item = (usize, (ops::RangeInclusive<u64>, u64))>>(
+        &mut self,
+        ii: II,
+    ) {
+        for (_, (r, l)) in ii {
+            self.0.push(r);
+            self.1 += l;
+        }
+    }
+}
+
+#[allow(clippy::cast_possible_truncation, clippy::match_single_binding)]
 fn solve<const TURNS: u64>(
     data: &str,
     parse: impl Fn(&str) -> (ops::RangeInclusive<u64>, u64),
 ) -> u64 {
-    let mut insert_left = false;
-    let mut right = vec![ops::RangeInclusive::new(1, 1)];
-    let mut left = vec![];
-    let mut len = 1;
-    for value in data
+    match data
         .lines()
-        .map(|line| {
-            let (range, l) = parse(line);
-            len += l;
-            range
-        })
-        .collect::<Vec<_>>()
+        .map(parse)
+        .enumerate()
+        .partition(|(n, _)| n % 2 == 0)
     {
-        if insert_left {
-            left.push(value);
-        } else {
-            right.push(value);
-        }
-        insert_left = !insert_left;
+        (Info(right, right_len), Info(left, left_len)) => std::iter::once(1)
+            .chain(right.into_iter().flatten())
+            .chain(left.into_iter().flatten().rev())
+            .nth((TURNS % (right_len + left_len + 1)) as usize)
+            .expect("No result!!!"),
     }
-
-    right
-        .into_iter()
-        .flatten()
-        .chain(left.into_iter().flatten().rev())
-        .nth((TURNS % len) as usize)
-        .expect("no values")
 }
 
 /// # Panics
