@@ -905,6 +905,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "event-2025-17"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+ "rayon",
+]
+
+[[package]]
 name = "everybody-codes"
 version = "0.1.0"
 dependencies = [
