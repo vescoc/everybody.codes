@@ -55,6 +55,7 @@ members = [
     "events/2025/quest-15",
     "events/2025/quest-16",
     "events/2025/quest-17",
+    "events/2025/quest-18",
 ]
 resolver = "3"
 
@@ -86,6 +87,7 @@ heapless = "0.9.1"
 gcd = "2.3.0"
 imageproc = "0.25"
 clap = { version = "4.5", features = ["derive"] }
+nom = "8"
 
 everybody-codes = { path = "common/everybody-codes" }
 mem = { path = "common/mem" }
