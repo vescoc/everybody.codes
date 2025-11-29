@@ -116,7 +116,7 @@ impl Client {
         ))?;
 
         let url = format!(
-            "https://everybody-codes.b-cdn.net/assets/{event}/{quest}/input/{}.json",
+            "https://everybody.codes/assets/{event}/{quest}/input/{}.json",
             self.seed
         );
 
