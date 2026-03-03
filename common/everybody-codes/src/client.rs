@@ -108,21 +108,16 @@ impl Client {
     /// # Errors
     pub fn input_notes(&self, event: u16, quest: u8) -> Result<InputNotes, InputNotesError> {
         let cookie_header = HeaderValue::from_str(&format!("everybody-codes={}", self.session))?;
-        let content_type_header = HeaderValue::from_str("text_plain")?;
+        let accept_header = HeaderValue::from_str("application/json")?;
         let user_agent_header = HeaderValue::from_str(&format!(
             "{} {}",
             env!("CARGO_PKG_REPOSITORY"),
             env!("CARGO_PKG_VERSION"),
         ))?;
 
-        let url = format!(
-            "https://everybody.codes/assets/{event}/{quest}/input/{}.json",
-            self.seed
-        );
-
         let mut headers = HeaderMap::new();
         headers.insert(header::COOKIE, cookie_header);
-        headers.insert(header::CONTENT_TYPE, content_type_header);
+        headers.insert(header::ACCEPT, accept_header);
         headers.insert(header::USER_AGENT, user_agent_header);
 
         let client = HttpClient::builder()
@@ -130,13 +125,18 @@ impl Client {
             .redirect(Policy::none())
             .build()?;
 
+        let url = format!(
+            "https://everybody.codes/assets/{event}/{quest}/input/{}.json",
+            self.seed
+        );
+
         let input_notes: InputNotesResponse = client
             .get(url)
             .send()
             .and_then(Response::error_for_status)
             .and_then(Response::json)?;
 
-        let url = format!("https://everybody.codes/api/event/{event}/quest/{quest}");
+        let url = format!("https://api.everybody.codes/event/{event}/quest/{quest}");
 
         let keys: KeysResponse = client
             .get(url)

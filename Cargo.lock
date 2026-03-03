@@ -2678,6 +2678,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "story-3-01"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "story-3-02"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "story-3-03"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
 name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
