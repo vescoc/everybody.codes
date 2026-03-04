@@ -2899,6 +2899,7 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "everybody-codes",
+ "rayon",
 ]
 
 [[package]]

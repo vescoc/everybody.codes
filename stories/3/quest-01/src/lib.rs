@@ -1,16 +1,20 @@
 #![no_std]
 
+use rayon::prelude::*;
+
+fn decode(color: &str) -> u32 {
+    color
+        .chars()
+        .fold(0, |a, c| (a << 1) + u32::from(c.is_uppercase()))
+}
+
 /// # Panics
 #[must_use]
 pub fn part_1(data: &str) -> u64 {
     data.lines()
         .filter_map(|line| {
             let (scale, colors) = line.split_once(':').expect("invalid line");
-            let mut colors = colors.split_whitespace().map(|color| {
-                color
-                    .chars()
-                    .fold(0u32, |a, c| a * 2 + u32::from(c.is_uppercase()))
-            });
+            let mut colors = colors.split_whitespace().map(decode);
 
             let red = colors.next().expect("cannot find red");
             let green = colors.next().expect("cannot find green");
@@ -27,14 +31,10 @@ pub fn part_1(data: &str) -> u64 {
 /// # Panics
 #[must_use]
 pub fn part_2(data: &str) -> u64 {
-    data.lines()
+    data.par_lines()
         .map(|line| {
             let (scale, colors) = line.split_once(':').expect("invalid line");
-            let mut colors = colors.split_whitespace().map(|color| {
-                color
-                    .chars()
-                    .fold(0u32, |a, c| a * 2 + u32::from(c.is_uppercase()))
-            });
+            let mut colors = colors.split_whitespace().map(decode);
 
             let red = colors.next().expect("cannot find red");
             let green = colors.next().expect("cannot find green");
@@ -56,14 +56,12 @@ pub fn part_2(data: &str) -> u64 {
 #[allow(clippy::similar_names)]
 #[must_use]
 pub fn part_3(data: &str) -> u64 {
-    let mut color_infos = [(0, 0); 6];
-    for line in data.lines() {
+    use core::sync::atomic::{self, AtomicU64, Ordering};
+
+    let color_infos = [const { (AtomicU64::new(0), AtomicU64::new(0)) }; 6];
+    data.par_lines().for_each(|line| {
         let (scale, colors) = line.split_once(':').expect("invalid line");
-        let mut colors = colors.split_whitespace().map(|color| {
-            color
-                .chars()
-                .fold(0u32, |a, c| a * 2 + u32::from(c.is_uppercase()))
-        });
+        let mut colors = colors.split_whitespace().map(decode);
 
         let red = colors.next().expect("cannot find red");
         let green = colors.next().expect("cannot find green");
@@ -74,40 +72,52 @@ pub fn part_3(data: &str) -> u64 {
         let shiny = shine >= 33;
 
         let color_infos = if matte {
-            Some(&mut color_infos[0..3])
+            Some(&color_infos[0..3])
         } else if shiny {
-            Some(&mut color_infos[3..6])
+            Some(&color_infos[3..6])
         } else {
             None
         };
 
-        if let Some(color_infos) = color_infos {
+        let color_info = if let Some(color_infos) = color_infos {
             let is_red = red > green && red > blue;
             let is_green = green > red && green > blue;
             let is_blue = blue > red && blue > green;
 
-            let color_info = if is_red {
-                color_infos.get_mut(0)
+            if is_red {
+                color_infos.get(0)
             } else if is_green {
-                color_infos.get_mut(1)
+                color_infos.get(1)
             } else if is_blue {
-                color_infos.get_mut(2)
+                color_infos.get(2)
             } else {
                 None
-            };
-
-            if let Some((count, total)) = color_info {
-                *count += 1;
-                *total += scale.parse::<u64>().expect("invalid scale");
             }
+        } else {
+            None
+        };
+
+        if let Some((count, total)) = color_info {
+            count.fetch_add(1, Ordering::Acquire);
+            total.fetch_add(
+                scale.parse::<u64>().expect("invalid scale"),
+                Ordering::Acquire,
+            );
+        }
+    });
+
+    atomic::compiler_fence(Ordering::Release);
+
+    let (mut max_count, mut max_scale) = (u64::MIN, u64::MIN);
+    for (count, scale) in color_infos {
+        let (count, scale) = (count.into_inner(), scale.into_inner());
+        if max_count < count {
+            max_count = count;
+            max_scale = scale;
         }
     }
 
-    color_infos
-        .iter()
-        .max_by_key(|(count, _)| *count)
-        .unwrap()
-        .1
+    max_scale
 }
 
 #[cfg(test)]
