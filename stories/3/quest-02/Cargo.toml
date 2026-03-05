@@ -8,6 +8,7 @@ event = 3
 quest = 2
 
 [dependencies]
+heapless.workspace = true
 
 [dev-dependencies]
 criterion.workspace = true

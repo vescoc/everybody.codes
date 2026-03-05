@@ -1,4 +1,11 @@
-use std::collections::{HashSet, VecDeque};
+#![no_std]
+
+mod bitset;
+use bitset::BitSet;
+
+type Deque<T> = heapless::Deque<T, 1024>;
+
+const DIRECTIONS: [(i64, i64); 4] = [(-1, 0), (0, 1), (1, 0), (0, -1)];
 
 /// # Panics
 #[must_use]
@@ -21,10 +28,10 @@ pub fn part_1(data: &str) -> u64 {
         }
     }
 
-    let mut directions = [(-1, 0), (0, 1), (1, 0), (0, -1)].iter().cycle();
+    let mut directions = DIRECTIONS.iter().cycle();
 
     let mut steps = 0;
-    let mut set = HashSet::with_capacity(data.len());
+    let mut set = BitSet::new();
     set.insert(start);
     loop {
         let (dr, dc) = directions.next().unwrap();
@@ -51,101 +58,94 @@ fn p_max((r1, c1): (i64, i64), (r2, c2): (i64, i64)) -> (i64, i64) {
 }
 
 fn fill(
-    set: &HashSet<(i64, i64)>,
+    filler: &mut BitSet,
+    set: &BitSet,
     min: (i64, i64),
     max: (i64, i64),
     position: (i64, i64),
-) -> Option<HashSet<(i64, i64)>> {
-    let mut filler = HashSet::with_capacity(2048);
+) -> bool {
     filler.insert(position);
 
-    let mut queue = VecDeque::from([position]);
+    let mut queue = Deque::try_from([position]).unwrap();
     while let Some(position) = queue.pop_front() {
-        for (dr, dc) in [(-1, 0), (0, 1), (1, 0), (0, -1)] {
+        for (dr, dc) in DIRECTIONS {
             let position = (position.0 + dr, position.1 + dc);
             if !set.contains(&position) {
                 if (min.0 + 1..max.0).contains(&position.0)
                     && (min.1 + 1..max.1).contains(&position.1)
                 {
                     if filler.insert(position) {
-                        queue.push_back(position);
+                        queue.push_back(position).unwrap();
                     }
                 } else {
-                    return None;
+                    return false;
                 }
             }
         }
     }
 
-    Some(filler)
+    true
 }
 
 /// # Panics
 #[must_use]
 #[allow(clippy::cast_possible_wrap)]
 pub fn solve<'a>(data: &str, mut directions: impl Iterator<Item = &'a (i64, i64)>) -> u64 {
+    let mut steps = 0;
+
     let mut start = (0, 0);
-    let mut bones = Vec::new();
+
+    let mut set = BitSet::new();
+    let mut perimeter = BitSet::new();
+    let mut min = (i64::MAX, i64::MAX);
+    let mut max = (i64::MIN, i64::MIN);
+
+    let mut init = |position| {
+        set.insert(position);
+        for (dr, dc) in DIRECTIONS {
+            perimeter.insert((position.0 + dr, position.1 + dc));
+        }
+
+        min = p_min(min, position);
+        max = p_max(max, position);
+    };
 
     for (r, row) in data.lines().enumerate() {
         for (c, v) in row.chars().enumerate() {
             match v {
                 '@' => {
                     start = (r as i64, c as i64);
+
+                    init(start);
                 }
                 '#' => {
-                    bones.push((r as i64, c as i64));
+                    let bone = (r as i64, c as i64);
+
+                    init(bone);
                 }
                 _ => {}
             }
         }
     }
 
-    let mut min = bones
-        .iter()
-        .copied()
-        .chain(std::iter::once(start))
-        .reduce(p_min)
-        .unwrap();
-    let mut max = bones
-        .iter()
-        .copied()
-        .chain(std::iter::once(start))
-        .reduce(p_max)
-        .unwrap();
-
-    let mut steps = 0;
-
-    let mut set = bones
-        .iter()
-        .copied()
-        .chain(std::iter::once(start))
-        .collect::<HashSet<_>>();
+    // filling holes
     for r in min.0..=max.0 {
         for c in min.1..=max.1 {
             if set.contains(&(r, c)) {
                 continue;
             }
 
-            if let Some(filler) = fill(&set, min, max, (r, c)) {
-                for position in filler {
-                    set.insert(position);
-                }
+            let mut filler = BitSet::new();
+            if fill(&mut filler, &set, min, max, (r, c)) {
+                set.union(&filler);
             }
         }
     }
 
-    let bones_set = bones.iter().copied().collect::<HashSet<_>>();
-    let perimeter = bones
-        .iter()
-        .copied()
-        .flat_map(|(r, c)| [(r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)])
-        .collect::<HashSet<_>>()
-        .difference(&bones_set)
-        .copied()
-        .collect::<HashSet<_>>();
+    // fix perimeter
+    perimeter.difference(&set);
 
-    loop {
+    while !perimeter.is_empty() {
         let (dr, dc) = directions.next().unwrap();
         let next_position = (start.0 + dr, start.1 + dc);
         if !set.insert(next_position) {
@@ -153,31 +153,28 @@ pub fn solve<'a>(data: &str, mut directions: impl Iterator<Item = &'a (i64, i64)
         }
 
         start = next_position;
+        perimeter.remove(&start);
 
         min = p_min(min, start);
         max = p_max(max, start);
 
-        for (dr, dc) in [(-1, 0), (0, 1), (1, 0), (0, -1)] {
+        for (dr, dc) in DIRECTIONS {
             let position = (start.0 + dr, start.1 + dc);
             if set.contains(&position) {
                 continue;
             }
 
-            if (min.0 + 1..max.0).contains(&position.0)
-                && (min.1 + 1..max.1).contains(&position.1)
-                && let Some(filler) = fill(&set, min, max, position)
+            if (min.0 + 1..max.0).contains(&position.0) && (min.1 + 1..max.1).contains(&position.1)
             {
-                for position in filler {
-                    set.insert(position);
+                let mut filler = BitSet::new();
+                if fill(&mut filler, &set, min, max, position) {
+                    set.union(&filler);
+                    perimeter.difference(&filler);
                 }
             }
         }
 
         steps += 1;
-
-        if set.intersection(&perimeter).count() == perimeter.len() {
-            break;
-        }
     }
 
     steps
@@ -186,7 +183,7 @@ pub fn solve<'a>(data: &str, mut directions: impl Iterator<Item = &'a (i64, i64)
 /// # Panics
 #[must_use]
 pub fn part_2(data: &str) -> u64 {
-    solve(data, [(-1, 0), (0, 1), (1, 0), (0, -1)].iter().cycle())
+    solve(data, DIRECTIONS.iter().cycle())
 }
 
 /// # Panics
