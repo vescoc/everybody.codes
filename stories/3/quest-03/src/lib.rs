@@ -162,11 +162,8 @@ impl<'a, const SIZE: usize> Nodes<'a, SIZE> {
 
                     new = left_index;
                     plug = self.nodes[new].assume_init_ref().plug;
-                } else if let Some((n, p)) = self.unsafe_insert_break(left_index, new, plug) {
-                    new = n;
-                    plug = p;
                 } else {
-                    return None;
+                    (new, plug) = self.unsafe_insert_break(left_index, new, plug)?;
                 }
             }
 
@@ -186,11 +183,8 @@ impl<'a, const SIZE: usize> Nodes<'a, SIZE> {
 
                     new = right_index;
                     plug = self.nodes[new].assume_init_ref().plug;
-                } else if let Some((n, p)) = self.unsafe_insert_break(right_index, new, plug) {
-                    new = n;
-                    plug = p;
                 } else {
-                    return None;
+                    (new, plug) = self.unsafe_insert_break(right_index, new, plug)?;
                 }
             }
         }
