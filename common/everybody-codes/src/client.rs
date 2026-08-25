@@ -1,6 +1,6 @@
 use std::{fs, io};
 
-use aes::cipher::{BlockDecryptMut, KeyIvInit, block_padding};
+use aes::cipher::{BlockModeDecrypt, KeyIvInit, block_padding};
 
 use reqwest::{
     blocking::{Client as HttpClient, Response},
@@ -32,8 +32,10 @@ pub enum InputNotesError {
     FromHex(#[from] hex::FromHexError),
     #[error("UTF8 error")]
     Utf8(#[from] std::str::Utf8Error),
-    #[error("Unpad error")]
-    Unpad(#[from] block_padding::UnpadError),
+    #[error("Block Padding Error")]
+    BlockPadding(#[from] block_padding::Error),
+    #[error("Invalid slice size")]
+    TryFromSlice(#[from] std::array::TryFromSliceError),
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -167,8 +169,8 @@ impl Client {
 fn decrypt(encrypted_text: &str, key: &str) -> Result<String, InputNotesError> {
     let encrypted_bytes = hex::decode(encrypted_text)?;
 
-    let data = Aes256CbcDec::new(key.as_bytes().into(), key.as_bytes()[..16].into())
-        .decrypt_padded_vec_mut::<block_padding::Pkcs7>(&encrypted_bytes)?;
+    let data = Aes256CbcDec::new(key.as_bytes().try_into()?, key.as_bytes()[..16].try_into()?)
+        .decrypt_padded_vec::<block_padding::Pkcs7>(&encrypted_bytes)?;
 
     Ok(std::str::from_utf8(&data)?.to_string())
 }
