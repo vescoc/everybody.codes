@@ -9,6 +9,7 @@ quest = 1
 
 [dependencies]
 rayon.workspace = true
+thiserror.workspace = true
 
 [dev-dependencies]
 criterion.workspace = true
