@@ -4,8 +4,15 @@ use std::collections::HashSet;
 
 use rayon::prelude::*;
 
+/// Initial set/list capacity.
+///
+/// Euristic: 1024 is good for actual inputs.
+const INITIAL_CAPACITY: usize = 1024;
+
+/// Errors returned from the `part*` implementations
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+    /// Invalid input number
     #[error("invalid number")]
     InvalidNumber,
 }
@@ -18,15 +25,19 @@ pub enum Error {
 pub fn part_1(data: &str) -> Result<i32, Error> {
     data.par_lines()
         .map(|line| {
-            let mut visited = HashSet::from([0]);
+            let mut visited = HashSet::with_capacity(INITIAL_CAPACITY);
+            visited.insert(0);
+
             line.split(',').try_fold(0, move |current, jump| {
                 let jump = jump.parse::<i32>().map_err(|_| Error::InvalidNumber)?;
 
+                // first, jump backward
                 let candidate = current - jump;
                 if candidate >= 0 && visited.insert(candidate) {
                     return Ok(candidate);
                 }
 
+                // if first failed, jump forward
                 let candidate = current + jump;
                 visited.insert(candidate);
 
@@ -44,15 +55,19 @@ pub fn part_1(data: &str) -> Result<i32, Error> {
 pub fn part_2(data: &str) -> Result<i32, Error> {
     data.par_lines()
         .map(|line| {
-            let mut visited = HashSet::from([0]);
+            let mut visited = HashSet::with_capacity(INITIAL_CAPACITY);
+            visited.insert(0);
+
             line.split(',').try_fold(0, move |current, jump| {
                 let jump = jump.parse::<i32>().map_err(|_| Error::InvalidNumber)?;
 
+                // first, jump backward
                 let candidate = current - jump;
                 if candidate >= 0 && visited.insert(candidate) {
                     return Ok(candidate);
                 }
 
+                // if first failed, jump forward
                 let mut candidate = current + jump;
                 while !visited.insert(candidate) {
                     candidate += 1;
@@ -76,10 +91,11 @@ pub fn part_2(data: &str) -> Result<i32, Error> {
 /// `true` if the candidate arc cross any of existing arcs
 fn arc_cross(arcs: &[(i32, i32)], (candidate_start, candidate_end): (i32, i32)) -> bool {
     arcs.iter().any(|&(arc_start, arc_end)| {
-        ((arc_start..=arc_end).contains(&candidate_start)
-            && !(arc_start..=arc_end).contains(&candidate_end))
-            || ((arc_start..=arc_end).contains(&candidate_end)
-                && !(arc_start..=arc_end).contains(&candidate_start))
+        (arc_end > candidate_start && arc_start < candidate_end)
+            && (((arc_start..arc_end).contains(&candidate_start)
+                 && !(arc_start..arc_end).contains(&candidate_end))
+                || ((arc_start..arc_end).contains(&candidate_end)
+                    && !(arc_start..arc_end).contains(&candidate_start)))
     })
 }
 
@@ -88,50 +104,68 @@ fn arc_cross(arcs: &[(i32, i32)], (candidate_start, candidate_end): (i32, i32)) 
 /// # Errors
 ///
 /// * [`Error::InvalidNumber`] - if a jump is invalid.
+#[expect(clippy::missing_panics_doc, reason = "Cannot panic")]
 pub fn part_3(data: &str) -> Result<i32, Error> {
     data.par_lines()
         .map(|line| {
             // Set of visited edges
-            let mut visited = HashSet::from([0]);
+            let mut visited = HashSet::with_capacity(INITIAL_CAPACITY);
+            visited.insert(0);
 
             // List of existing arcs. In index 0 the *lower* arcs. In
             // index 1 the *upper* arcs
-            let mut arcs = [vec![], vec![]];
+            let mut arcs = [
+                Vec::with_capacity(INITIAL_CAPACITY),
+                Vec::with_capacity(INITIAL_CAPACITY),
+            ];
 
             // Current arc type:
             // 0 - *lower*/*down* arc
             // 1 - *upper* arc
-            let mut arc_type = 0;
+            let mut arc_type = [0, 1].iter().cycle().peekable();
 
             // Max edge index on the right
             let mut max_edge = 0;
             line.split(',').try_fold(0, move |current, jump| {
                 let jump = jump.parse::<i32>().map_err(|_| Error::InvalidNumber)?;
 
+                // current arc type as index (0, 1)
+                // cannot panic: cyclic iterator
+                let current_arc_type = **arc_type.peek().unwrap();
+
+                // first, jump backward
                 let candidate = current - jump;
+
+                // cannot use `visited.insert` (as last check) because
+                // `arc_cross` is O(n), performance degrades
                 if candidate >= 0
                     && !visited.contains(&candidate)
-                    && !arc_cross(&arcs[arc_type], (candidate, current))
+                    && !arc_cross(&arcs[current_arc_type], (candidate, current))
                 {
                     visited.insert(candidate);
-                    arcs[arc_type].push((candidate, current));
+
+                    arcs[current_arc_type].push((candidate, current));
                     max_edge = max_edge.max(current);
 
-                    arc_type = (arc_type + 1) % 2;
+                    arc_type.next();
 
                     return Ok(candidate);
                 }
 
+                // if first failed, jump forward
                 let mut candidate = current + jump;
                 loop {
+                    // cannot use `visited.insert` (as last check)
+                    // because `arc_cross` is O(n), performance degrades
                     if !visited.contains(&candidate)
-                        && !arc_cross(&arcs[arc_type], (current, candidate))
+                        && !arc_cross(&arcs[current_arc_type], (current, candidate))
                     {
                         visited.insert(candidate);
-                        arcs[arc_type].push((current, candidate));
+
+                        arcs[current_arc_type].push((current, candidate));
                         max_edge = max_edge.max(candidate);
 
-                        arc_type = (arc_type + 1) % 2;
+                        arc_type.next();
 
                         return Ok(candidate);
                     }
