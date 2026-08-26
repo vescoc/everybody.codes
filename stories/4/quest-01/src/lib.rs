@@ -21,7 +21,7 @@ pub enum Error {
 ///
 /// # Errors
 ///
-/// * [`Error::InvalidNumber`] - if a jump is invalid.
+/// * [`Error::InvalidNumber`] - if parsing a jump is invalid.
 pub fn part_1(data: &str) -> Result<i32, Error> {
     data.par_lines()
         .map(|line| {
@@ -51,7 +51,7 @@ pub fn part_1(data: &str) -> Result<i32, Error> {
 ///
 /// # Errors
 ///
-/// * [`Error::InvalidNumber`] - if a jump is invalid.
+/// * [`Error::InvalidNumber`] - if parsing a jump is invalid.
 pub fn part_2(data: &str) -> Result<i32, Error> {
     data.par_lines()
         .map(|line| {
@@ -91,11 +91,10 @@ pub fn part_2(data: &str) -> Result<i32, Error> {
 /// `true` if the candidate arc cross any of existing arcs
 fn arc_cross(arcs: &[(i32, i32)], (candidate_start, candidate_end): (i32, i32)) -> bool {
     arcs.iter().any(|&(arc_start, arc_end)| {
-        (arc_end > candidate_start && arc_start < candidate_end)
-            && (((arc_start..arc_end).contains(&candidate_start)
-                 && !(arc_start..arc_end).contains(&candidate_end))
-                || ((arc_start..arc_end).contains(&candidate_end)
-                    && !(arc_start..arc_end).contains(&candidate_start)))
+        candidate_end > arc_start &&
+            candidate_start < arc_end &&
+            (candidate_start < arc_start || candidate_end > arc_end) &&
+            (arc_start < candidate_start || arc_end > candidate_end)
     })
 }
 
@@ -103,7 +102,7 @@ fn arc_cross(arcs: &[(i32, i32)], (candidate_start, candidate_end): (i32, i32)) 
 ///
 /// # Errors
 ///
-/// * [`Error::InvalidNumber`] - if a jump is invalid.
+/// * [`Error::InvalidNumber`] - if parsing a jump is invalid.
 #[expect(clippy::missing_panics_doc, reason = "Cannot panic")]
 pub fn part_3(data: &str) -> Result<i32, Error> {
     data.par_lines()
