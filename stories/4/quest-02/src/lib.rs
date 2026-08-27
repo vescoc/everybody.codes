@@ -1,213 +1,211 @@
-#![no_std]
+//! [Story 4 Quest 2](https://everybody.codes/story/4/quests/2)
 
-mod bitset;
-use bitset::BitSet;
+use std::collections::{HashMap, HashSet, VecDeque};
 
-type Deque<T> = heapless::Deque<T, 1024>;
+/// Errors returned from the `part*` implementations
+#[derive(thiserror::Error, Debug)]
+pub enum Error<'a> {
+    /// Invalid input data
+    #[error("invalid input data")]
+    InvalidInputData(&'a str),
+    /// Invalid input data missing part
+    #[error("invalid input data missing part")]
+    MissingPart(&'static str),
+}
 
-const DIRECTIONS: [(i64, i64); 4] = [(-1, 0), (0, 1), (1, 0), (0, -1)];
+/// Parse `<digit>+,<digit>+]`
+///
+/// # Returns
+///
+/// Coordinate
+fn parse_coordinate(data: &str) -> Result<(i32, i32), Error<'_>> {
+    let mut parts = data.split(',');
+    let x = parts
+        .next()
+        .ok_or(Error::InvalidInputData(data))?
+        .parse()
+        .map_err(|_| Error::InvalidInputData(data))?;
+    let y = parts
+        .next()
+        .ok_or(Error::InvalidInputData(data))?
+        .split(']')
+        .next()
+        .ok_or(Error::InvalidInputData(data))?
+        .parse()
+        .map_err(|_| Error::InvalidInputData(data))?;
 
-/// # Panics
-#[must_use]
-#[allow(clippy::cast_possible_wrap)]
-pub fn part_1(data: &str) -> u64 {
-    let mut start = (0, 0);
-    let mut end = (0, 0);
+    Ok((x, y))
+}
 
-    for (r, row) in data.lines().enumerate() {
-        for (c, v) in row.chars().enumerate() {
-            match v {
-                '@' => {
-                    start = (r as i64, c as i64);
-                }
-                '#' => {
-                    end = (r as i64, c as i64);
-                }
-                _ => {}
-            }
+/// Resolve part 1
+///
+/// # Errors
+///
+/// * [`Error::InvalidInputData`] -
+/// * [`Error::MissingPart`] -
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "Truncation is requested by quest description"
+)]
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "Precision loss is requested by quest description"
+)]
+pub fn part_1(data: &str) -> Result<usize, Error<'_>> {
+    let mut start = None;
+    let mut beacons = HashMap::with_capacity(8);
+    let mut moves = None;
+    for line in data.lines() {
+        if let Some(stripped_prefix) = line.strip_prefix("START=[") {
+            start = Some(parse_coordinate(stripped_prefix)?);
+        } else if let Some(stripped_prefix) = line.strip_prefix("MOVES=") {
+            moves = Some(stripped_prefix);
+        } else {
+            let mut parts = line.split("=[");
+            let beacon = parts
+                .next()
+                .ok_or(Error::InvalidInputData(line))?
+                .chars()
+                .next()
+                .ok_or(Error::InvalidInputData(line))?;
+            let coordinate = parse_coordinate(parts.next().ok_or(Error::InvalidInputData(line))?)?;
+            beacons.insert(beacon, coordinate);
         }
     }
 
-    let mut directions = DIRECTIONS.iter().cycle();
+    let (mut current_x, mut current_y) = start.ok_or(Error::MissingPart("START"))?;
+    let moves = moves.ok_or(Error::MissingPart("MOVES"))?;
 
-    let mut steps = 0;
-    let mut set = BitSet::new();
-    set.insert(start);
-    loop {
-        let (dr, dc) = directions.next().unwrap();
-        let next_position = (start.0 + dr, start.1 + dc);
-        if !set.insert(next_position) {
-            continue;
-        }
-        steps += 1;
-        if end == next_position {
-            break;
-        }
-        start = next_position;
+    let mut beetles = HashSet::with_capacity(1024);
+    beetles.insert((current_x, current_y));
+
+    for beacon in moves.chars() {
+        let (beacon_x, beacon_y) = *beacons.get(&beacon).ok_or(Error::InvalidInputData(data))?;
+        current_x = (current_x as f32 + (beacon_x as f32 - current_x as f32) / 2.0) as i32;
+        current_y = (current_y as f32 + (beacon_y as f32 - current_y as f32) / 2.0) as i32;
+
+        beetles.insert((current_x, current_y));
     }
 
-    steps
+    Ok(beetles.len())
 }
 
-fn p_min((r1, c1): (i64, i64), (r2, c2): (i64, i64)) -> (i64, i64) {
-    (r1.min(r2), c1.min(c2))
-}
-
-fn p_max((r1, c1): (i64, i64), (r2, c2): (i64, i64)) -> (i64, i64) {
-    (r1.max(r2), c1.max(c2))
-}
-
-fn fill(
-    filler: &mut BitSet,
-    set: &BitSet,
-    min: (i64, i64),
-    max: (i64, i64),
-    position: (i64, i64),
-) -> bool {
-    filler.insert(position);
-
-    let mut queue = Deque::try_from([position]).unwrap();
-    while let Some(position) = queue.pop_front() {
-        for (dr, dc) in DIRECTIONS {
-            let position = (position.0 + dr, position.1 + dc);
-            if !set.contains(&position) {
-                if (min.0 + 1..max.0).contains(&position.0)
-                    && (min.1 + 1..max.1).contains(&position.1)
-                {
-                    if filler.insert(position) {
-                        queue.push_back(position).unwrap();
-                    }
-                } else {
-                    return false;
-                }
-            }
+/// Resolve part 2
+///
+/// # Errors
+///
+/// * [`Error::InvalidInputData`] -
+/// * [`Error::MissingPart`] -
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "Truncation is requested by quest description"
+)]
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "Precision loss is requested by quest description"
+)]
+pub fn part_2(data: &str) -> Result<usize, Error<'_>> {
+    let mut start = None;
+    let mut beacons = HashMap::with_capacity(8);
+    let mut moves = None;
+    for line in data.lines() {
+        if let Some(stripped_prefix) = line.strip_prefix("START=[") {
+            start = Some(parse_coordinate(stripped_prefix)?);
+        } else if let Some(stripped_prefix) = line.strip_prefix("MOVES=") {
+            moves = Some(stripped_prefix);
+        } else {
+            let mut parts = line.split("=[");
+            let beacon = parts
+                .next()
+                .ok_or(Error::InvalidInputData(line))?
+                .chars()
+                .next()
+                .ok_or(Error::InvalidInputData(line))?;
+            let coordinate = parse_coordinate(parts.next().ok_or(Error::InvalidInputData(line))?)?;
+            beacons.insert(beacon, coordinate);
         }
     }
 
-    true
-}
+    let (mut current_x, mut current_y) = start.ok_or(Error::MissingPart("START"))?;
+    let moves = moves.ok_or(Error::MissingPart("MOVES"))?;
 
-/// # Panics
-#[must_use]
-#[allow(clippy::cast_possible_wrap)]
-pub fn solve<'a>(data: &str, mut directions: impl Iterator<Item = &'a (i64, i64)>) -> u64 {
-    let mut steps = 0;
+    let mut beetles = HashSet::with_capacity(1024 * 8);
+    beetles.insert((current_x, current_y));
 
-    let mut start = (0, 0);
+    for beacon in moves.chars() {
+        let (beacon_x, beacon_y) = *beacons.get(&beacon).ok_or(Error::InvalidInputData(data))?;
+        current_x = (current_x as f32 + (beacon_x as f32 - current_x as f32) / 2.0) as i32;
+        current_y = (current_y as f32 + (beacon_y as f32 - current_y as f32) / 2.0) as i32;
 
-    let mut set = BitSet::new();
-    let mut perimeter = BitSet::new();
-    let mut min = (i64::MAX, i64::MAX);
-    let mut max = (i64::MIN, i64::MIN);
-
-    let mut init = |position| {
-        set.insert(position);
-        for (dr, dc) in DIRECTIONS {
-            perimeter.insert((position.0 + dr, position.1 + dc));
-        }
-
-        min = p_min(min, position);
-        max = p_max(max, position);
-    };
-
-    for (r, row) in data.lines().enumerate() {
-        for (c, v) in row.chars().enumerate() {
-            match v {
-                '@' => {
-                    start = (r as i64, c as i64);
-
-                    init(start);
-                }
-                '#' => {
-                    let bone = (r as i64, c as i64);
-
-                    init(bone);
-                }
-                _ => {}
-            }
-        }
+        beetles.insert((current_x, current_y));
     }
 
-    // filling holes
-    for r in min.0..=max.0 {
-        for c in min.1..=max.1 {
-            if set.contains(&(r, c)) {
-                continue;
-            }
-
-            let mut filler = BitSet::new();
-            if fill(&mut filler, &set, min, max, (r, c)) {
-                set.union(&filler);
-            }
-        }
-    }
-
-    // fix perimeter
-    perimeter.difference(&set);
-
-    while !perimeter.is_empty() {
-        let (dr, dc) = directions.next().unwrap();
-        let next_position = (start.0 + dr, start.1 + dc);
-        if !set.insert(next_position) {
-            continue;
-        }
-
-        start = next_position;
-        perimeter.remove(&start);
-
-        min = p_min(min, start);
-        max = p_max(max, start);
-
-        for (dr, dc) in DIRECTIONS {
-            let position = (start.0 + dr, start.1 + dc);
-            if set.contains(&position) {
-                continue;
-            }
-
-            if (min.0 + 1..max.0).contains(&position.0) && (min.1 + 1..max.1).contains(&position.1)
-            {
-                let mut filler = BitSet::new();
-                if fill(&mut filler, &set, min, max, position) {
-                    set.union(&filler);
-                    perimeter.difference(&filler);
-                }
-            }
-        }
-
-        steps += 1;
-    }
-
-    steps
-}
-
-/// # Panics
-#[must_use]
-pub fn part_2(data: &str) -> u64 {
-    solve(data, DIRECTIONS.iter().cycle())
-}
-
-/// # Panics
-#[must_use]
-pub fn part_3(data: &str) -> u64 {
-    solve(
-        data,
-        [
-            (-1, 0),
-            (-1, 0),
-            (-1, 0),
-            (0, 1),
-            (0, 1),
-            (0, 1),
-            (1, 0),
-            (1, 0),
-            (1, 0),
-            (0, -1),
-            (0, -1),
-            (0, -1),
-        ]
+    let fireflies = beetles
         .iter()
-        .cycle(),
-    )
+        .flat_map(|&(x, y)| [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)])
+        .collect::<HashSet<_>>();
+
+    Ok(fireflies.difference(&beetles).count())
+}
+
+/// Resolve part 2
+///
+/// # Errors
+///
+/// * [`Error::InvalidInputData`] -
+/// * [`Error::MissingPart`] -
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "Truncation is requested by quest description"
+)]
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "Precision loss is requested by quest description"
+)]
+pub fn part_3(data: &str) -> Result<usize, Error<'_>> {
+    let mut start = None;
+    let mut beacons = HashMap::with_capacity(8);
+    for line in data.lines() {
+        if let Some(stripped_prefix) = line.strip_prefix("START=[") {
+            start = Some(parse_coordinate(stripped_prefix)?);
+        } else {
+            let mut parts = line.split("=[");
+            let beacon = parts
+                .next()
+                .ok_or(Error::InvalidInputData(line))?
+                .chars()
+                .next()
+                .ok_or(Error::InvalidInputData(line))?;
+            let coordinate = parse_coordinate(parts.next().ok_or(Error::InvalidInputData(line))?)?;
+            beacons.insert(beacon, coordinate);
+        }
+    }
+
+    let (current_x, current_y) = start.ok_or(Error::MissingPart("START"))?;
+
+    let mut beetles = HashSet::with_capacity(1024 * 32);
+    beetles.insert((current_x, current_y));
+
+    let mut queue = VecDeque::with_capacity(1024 * 32);
+    queue.push_back((current_x, current_y));
+
+    while let Some((current_x, current_y)) = queue.pop_front() {
+        for &(beacon_x, beacon_y) in beacons.values() {
+            let new_x = (current_x as f32 + (beacon_x as f32 - current_x as f32) / 2.0) as i32;
+            let new_y = (current_y as f32 + (beacon_y as f32 - current_y as f32) / 2.0) as i32;
+
+            if beetles.insert((new_x, new_y)) {
+                queue.push_back((new_x, new_y));
+            }
+        }
+    }
+
+    let fireflies = beetles
+        .iter()
+        .flat_map(|&(x, y)| [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)])
+        .collect::<HashSet<_>>();
+
+    Ok(fireflies.difference(&beetles).count())
 }
 
 #[cfg(test)]
@@ -216,94 +214,49 @@ mod tests {
 
     #[test]
     fn test_part_1() {
-        let data = r".......
-.......
-.......
-.#.@...
-.......
-.......
-.......";
-        assert_eq!(part_1(data), 12);
+        let data = r"START=[5,0]
+A=[0,0]
+B=[10,0]
+C=[5,10]
+MOVES=ABCCBABCA";
+        assert_eq!(part_1(data).unwrap(), 8);
     }
 
     #[test]
-    fn test_part_2() {
-        let data = r".......
-.......
-.......
-.#.@...
-.......
-.......
-.......";
-        assert_eq!(part_2(data), 47);
+    fn test_part_2_1() {
+        let data = r"START=[5,0]
+A=[0,0]
+B=[10,0]
+C=[5,10]
+MOVES=ABCCBABCA";
+        assert_eq!(part_2(data).unwrap(), 25);
+    }
+
+    #[test]
+    fn test_part_2_2() {
+        let data = r"START=[5,0]
+A=[0,0]
+B=[10,0]
+C=[5,10]
+MOVES=BABCAABBCABCCCBBABCCCAAACABABCBCBBCAABBABBCACCBAABCBCBBBCBBBBBCCCAACAACB";
+        assert_eq!(part_2(data).unwrap(), 46);
     }
 
     #[test]
     fn test_part_3_1() {
-        let data = r".......
-.......
-.......
-.#.@...
-.......
-.......
-.......";
-        assert_eq!(part_3(data), 87);
+        let data = r"START=[5,0]
+A=[0,0]
+B=[10,0]
+C=[5,10]";
+        assert_eq!(part_3(data).unwrap(), 42);
     }
 
     #[test]
     fn test_part_3_2() {
-        let data = r"#..#.......#...
-...#...........
-...#...........
-#######........
-...#....#######
-...#...@...#...
-...#.......#...
-...........#...
-...........#...
-#..........#...
-##......#######";
-        assert_eq!(part_3(data), 239);
-    }
-
-    #[test]
-    fn test_part_3_3() {
-        let data = r"................................................................
-.........................###.........###........................
-....................##...###########.#####......#.......###.....
-.........##.............############....####.............##.....
-.......######..............#############.###....................
-.........##................#############.###.......##...........
-...............##...........########....####....................
-...............................####.#######...........##........
-........................##################...........####.......
-....#.........#########################.....##......######......
-..............#.##......##....##..##.##...............##........
-..............................##....##..........##..............
-........####....#################..######...................##..
-........###.....###...####..###..##...##.########...............
-.................####....###..##.##.##..###....##.....##........
-....##...........#######.....##..##..##......#####..........#...
-...........##......#########......#....##.######..........#####.
-...........##........###########################....#.......#...
-.........######............##################.......#...........
-...........##.............#########.............................
-............#.........#############....................#........
-.....#...........##..####......###......##........#.............
-.............##................###..........#.....#.............
-..................##...........##...................##..........
-..........................###.####.####.........................
-................#.###########..###.############.#...............
-.....#####....###...............................###.............
-.....#####...#############......@......#############............
-.....#########.###################################.#............
-...###########..##.....###################.....##..##...........
-...######...#######.##...###.........##...##...###.##...........
-.....##.########........#####..###..####.......#.########.......
-............#########################################...........
-..............#####################################.............
-...............................###..............................
-................................................................";
-        assert_eq!(part_3(data), 1539);
+        let data = r"START=[0,0]
+A=[0,0]
+B=[80,15]
+C=[5,30]";
+        assert_eq!(part_3(data).unwrap(), 432);
     }
 }
