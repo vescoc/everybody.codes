@@ -67,7 +67,7 @@ members = [
     # Story 4
     "stories/4/quest-01",
     "stories/4/quest-02",
-#    "stories/4/quest-03",
+    "stories/4/quest-03",
 ]
 resolver = "3"
 

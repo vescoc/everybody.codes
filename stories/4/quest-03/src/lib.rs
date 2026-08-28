@@ -1,315 +1,283 @@
-#![no_std]
+//! [Story 4 Quest 3](https://everybody.codes/story/4/quests/3)
 
-type Socket<'a> = (&'a str, &'a str);
-
-struct Node<'a> {
-    id: u64,
-    #[allow(dead_code)]
-    plug: Socket<'a>,
-    left: Socket<'a>,
-    right: Socket<'a>,
-    left_index: usize,
-    left_strong: bool,
-    right_index: usize,
-    right_strong: bool,
+/// Errors returned from the `part*` implementations
+#[derive(thiserror::Error, Debug)]
+pub enum Error<'a> {
+    /// Invalid input data
+    #[error("invalid input data")]
+    InvalidInputData(&'a str),
 }
 
-impl Node<'_> {}
-
-struct Nodes<'a, const SIZE: usize> {
-    nodes: [core::mem::MaybeUninit<Node<'a>>; SIZE],
-    next: usize,
+/// Input data parsed
+struct GridInfo {
+    width: usize,
+    height: usize,
+    horizontal_offsets: Vec<usize>,
+    vertical_offsets: Vec<usize>,
 }
 
-impl<'a, const SIZE: usize> Nodes<'a, SIZE> {
-    const fn new() -> Self {
-        Self {
-            nodes: [const { core::mem::MaybeUninit::uninit() }; SIZE],
-            next: 0,
-        }
+fn parse_digit(c: u8) -> Option<usize> {
+    if c.is_ascii_digit() {
+        Some(usize::from(c - b'0'))
+    } else {
+        None
     }
+}
 
-    fn insert(
-        &mut self,
-        compatible_bond: impl Fn(Socket<'a>, Socket<'a>) -> bool,
-        id: u64,
-        plug: Socket<'a>,
-        left: Socket<'a>,
-        right: Socket<'a>,
-    ) {
-        self.nodes[self.next].write(Node {
-            id,
-            plug,
-            left,
-            right,
-            left_index: 0,
-            left_strong: false,
-            right_index: 0,
-            right_strong: false,
-        });
-
-        if self.next > 0 {
-            // SAFETY: root exists
-            if !unsafe { self.unsafe_insert(&compatible_bond, 0, plug) } {
-                unreachable!("cannot insert {id}");
+impl GridInfo {
+    /// Parse input data
+    ///
+    /// # Arguments
+    ///
+    /// * data - input data
+    ///
+    /// # Results
+    ///
+    /// * [`GridInfo`]
+    ///
+    /// # Errors
+    ///
+    /// * [`Error::InvalidInputData`] - if the input data format is invalid
+    fn parse(data: &str) -> Result<Self, Error<'_>> {
+        let mut width = None;
+        let mut height = None;
+        let mut horizontal_offsets = None;
+        let mut vertical_offsets = None;
+        for line in data.lines() {
+            if let Some(stripped_prefix) = line.strip_prefix("width=") {
+                width = Some(
+                    stripped_prefix
+                        .parse::<usize>()
+                        .map_err(|_| Error::InvalidInputData(line))?,
+                );
+            } else if let Some(stripped_prefix) = line.strip_prefix("height=") {
+                height = Some(
+                    stripped_prefix
+                        .parse::<usize>()
+                        .map_err(|_| Error::InvalidInputData(line))?,
+                );
+            } else if let Some(stripped_prefix) = line.strip_prefix("horizontal-offsets=") {
+                horizontal_offsets = Some(stripped_prefix.as_bytes());
+            } else if let Some(stripped_prefix) = line.strip_prefix("vertical-offsets=") {
+                vertical_offsets = Some(stripped_prefix.as_bytes());
+            } else {
+                return Err(Error::InvalidInputData(line));
             }
         }
 
-        self.next += 1;
+        let width = width.ok_or(Error::InvalidInputData(data))?;
+        let height = height.ok_or(Error::InvalidInputData(data))?;
+        let horizontal_offsets = horizontal_offsets
+            .ok_or(Error::InvalidInputData(data))?
+            .iter()
+            .map(|d| parse_digit(*d).ok_or(Error::InvalidInputData(data)))
+            .collect::<Result<Vec<_>, _>>()?;
+        let vertical_offsets = vertical_offsets
+            .ok_or(Error::InvalidInputData(data))?
+            .iter()
+            .map(|d| parse_digit(*d).ok_or(Error::InvalidInputData(data)))
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(Self {
+            width,
+            height,
+            horizontal_offsets,
+            vertical_offsets,
+        })
     }
 
-    fn insert_break(&mut self, id: u64, plug: Socket<'a>, left: Socket<'a>, right: Socket<'a>) {
-        self.nodes[self.next].write(Node {
-            id,
-            plug,
-            left,
-            right,
-            left_index: 0,
-            left_strong: false,
-            right_index: 0,
-            right_strong: false,
-        });
+    /// Returns the horizontal offset at `index`
+    ///
+    /// # Arguments
+    ///
+    /// * `index`
+    ///
+    /// # Returns
+    ///
+    /// * offset value at `index`    
+    fn horizontal_offset(&self, index: usize) -> usize {
+        self.horizontal_offsets[index % self.horizontal_offsets.len()]
+    }
 
-        if self.next > 0 {
-            let mut new = self.next;
-            let mut plug = plug;
-            loop {
-                // SAFETY: root exists
-                let Some((n, p)) = (unsafe { self.unsafe_insert_break(0, new, plug) }) else {
-                    break;
-                };
+    /// Returns the vertical offset at `index`
+    ///
+    /// # Arguments
+    ///
+    /// * `index`
+    ///
+    /// # Returns
+    ///
+    /// * vertical value at `index`    
+    fn vertical_offset(&self, index: usize) -> usize {
+        self.vertical_offsets[index % self.vertical_offsets.len()]
+    }
 
-                assert!(n != new && p != plug);
+    /// Returns the counts of isolated tiles
+    ///
+    /// # Errors
+    ///
+    /// * [`std::num::TryFromIntError`] - if cannot convert `usize` to `u64`
+    fn solve(&self) -> Result<[u64; 2], std::num::TryFromIntError> {
+        let rows = self.horizontal_offsets.len() * 2;
+        let columns = self.vertical_offsets.len() * 2;
 
-                new = n;
-                plug = p;
+        let mut total = [0, 0];
+
+        let mut row_parity = 0;
+        for y in 0..rows.min(self.height) {
+            if y > 0 && self.horizontal_offset(y) == 0 {
+                row_parity ^= 1;
             }
-        }
 
-        self.next += 1;
-    }
-
-    fn visit(&self, mut visitor: impl FnMut(&Node<'a>)) {
-        if self.next > 0 {
-            // SAFETY: root exists
-            unsafe {
-                self.unsafe_visit(0, &mut visitor);
+            if self.horizontal_offset(y) != self.horizontal_offset(y + 1) {
+                continue;
             }
-        }
-    }
 
-    /// # Safety: internal function
-    unsafe fn unsafe_insert(
-        &mut self,
-        compatible_bond: &impl Fn(Socket<'a>, Socket<'a>) -> bool,
-        current: usize,
-        plug: Socket<'a>,
-    ) -> bool {
-        // SAFETY: Internal function
-        unsafe {
-            {
-                let node = self.nodes[current].assume_init_mut();
-                let left_index = node.left_index;
-                if left_index == 0 {
-                    if compatible_bond(plug, node.left) {
-                        node.left_index = self.next;
-                        return true;
-                    }
-                } else if self.unsafe_insert(compatible_bond, left_index, plug) {
-                    return true;
+            let mut column_parity = 0;
+            for x in 0..columns.min(self.width) {
+                if x > 0 && self.vertical_offset(x) == y % 2 {
+                    column_parity ^= 1;
                 }
-            }
 
-            {
-                let node = self.nodes[current].assume_init_mut();
-                let right_index = node.right_index;
-                if right_index == 0 {
-                    if compatible_bond(plug, node.right) {
-                        node.right_index = self.next;
-                        return true;
-                    }
-                } else if self.unsafe_insert(compatible_bond, right_index, plug) {
-                    return true;
+                if self.horizontal_offset(y) != x % 2
+                    || self.vertical_offset(x) != y % 2
+                    || self.vertical_offset(x + 1) != y % 2
+                {
+                    continue;
                 }
+
+                total[row_parity ^ column_parity] +=
+                    u64::try_from((self.width - x).div_ceil(columns))?
+                        * u64::try_from((self.height - y).div_ceil(rows))?;
             }
         }
 
-        false
+        Ok(total)
     }
 
-    /// # Safety: internal function
-    unsafe fn unsafe_insert_break(
-        &mut self,
-        current: usize,
-        mut new: usize,
-        mut plug: Socket<'a>,
-    ) -> Option<(usize, Socket<'a>)> {
-        // SAFETY: Internal function
-        unsafe {
-            {
-                let node = self.nodes[current].assume_init_mut();
-                let left_index = node.left_index;
-                let left_strong = node.left_strong;
-                if left_index == 0 {
-                    if weak_bond(plug, node.left) {
-                        node.left_index = new;
-                        node.left_strong = strong_bond(plug, node.left);
-                        return None;
-                    }
-                } else if !left_strong && strong_bond(plug, node.left) {
-                    node.left_index = new;
-                    node.left_strong = true;
+    /// Returns the counts of isolated tiles by coloring the grid
+    /// (slow method)
+    #[expect(unused, reason = "Here for historical reasons :-)")]
+    fn solve_slow(&self) -> [u64; 2] {
+        use std::collections::{HashMap, VecDeque};
 
-                    new = left_index;
-                    plug = self.nodes[new].assume_init_ref().plug;
-                } else {
-                    (new, plug) = self.unsafe_insert_break(left_index, new, plug)?;
+        let mut grid = vec![vec![0u8; self.width]; self.height];
+
+        let horizontal_offsets = self
+            .horizontal_offsets
+            .iter()
+            .copied()
+            .cycle()
+            .take(self.height + 1)
+            .collect::<Vec<_>>();
+        for (offsets, row) in horizontal_offsets.windows(2).zip(grid.iter_mut()) {
+            for (index, tile) in row.iter_mut().enumerate() {
+                if index % 2 == offsets[0] {
+                    *tile |= 0b1000;
                 }
-            }
-
-            {
-                let node = self.nodes[current].assume_init_mut();
-                let right_index = node.right_index;
-                let right_strong = node.right_strong;
-                if right_index == 0 {
-                    if weak_bond(plug, node.right) {
-                        node.right_index = new;
-                        node.right_strong = strong_bond(plug, node.right);
-                        return None;
-                    }
-                } else if !right_strong && strong_bond(plug, node.right) {
-                    node.right_index = new;
-                    node.right_strong = true;
-
-                    new = right_index;
-                    plug = self.nodes[new].assume_init_ref().plug;
-                } else {
-                    (new, plug) = self.unsafe_insert_break(right_index, new, plug)?;
+                if index % 2 == offsets[1] {
+                    *tile |= 0b0100;
                 }
             }
         }
 
-        Some((new, plug))
-    }
-
-    /// # Safety: internal function
-    unsafe fn unsafe_visit(&self, current: usize, visitor: &mut impl FnMut(&Node<'a>)) {
-        unsafe {
-            let node = self.nodes[current].assume_init_ref();
-            if node.left_index > 0 {
-                self.unsafe_visit(node.left_index, visitor);
-            }
-            visitor(node);
-            if node.right_index > 0 {
-                self.unsafe_visit(node.right_index, visitor);
+        let vertical_offsets = self
+            .vertical_offsets
+            .iter()
+            .copied()
+            .cycle()
+            .take(self.width + 1)
+            .collect::<Vec<_>>();
+        for (column, offsets) in vertical_offsets.windows(2).enumerate() {
+            for (index, row) in grid.iter_mut().enumerate() {
+                let tile = &mut row[column];
+                if index % 2 == offsets[0] {
+                    *tile |= 0b0010;
+                }
+                if index % 2 == offsets[1] {
+                    *tile |= 0b0001;
+                }
             }
         }
+
+        let mut colors = HashMap::with_capacity(self.width * self.height);
+        let mut queue = VecDeque::with_capacity(1024);
+        queue.push_back(((0, 0), 0));
+
+        while let Some(((x, y), color)) = queue.pop_front() {
+            let std::collections::hash_map::Entry::Vacant(entry) = colors.entry((x, y)) else {
+                continue;
+            };
+            entry.insert(color);
+
+            let tile = grid[y][x];
+
+            if x > 0 {
+                queue.push_back(((x - 1, y), (color + usize::from(tile & 0b0010 != 0)) % 2));
+            }
+            if x + 1 < self.width {
+                queue.push_back(((x + 1, y), (color + usize::from(tile & 0b0001 != 0)) % 2));
+            }
+            if y > 0 {
+                queue.push_back(((x, y - 1), (color + usize::from(tile & 0b1000 != 0)) % 2));
+            }
+            if y + 1 < self.height {
+                queue.push_back(((x, y + 1), (color + usize::from(tile & 0b0100 != 0)) % 2));
+            }
+        }
+
+        let mut groups = [0, 0];
+        for (y, row) in grid.iter().enumerate() {
+            for (x, tile) in row.iter().enumerate() {
+                if *tile == 0b1111 {
+                    groups[colors[&(x, y)]] += 1;
+                }
+            }
+        }
+
+        groups
     }
 }
 
-fn weak_bond<'a>(plug: Socket<'a>, socket: Socket<'a>) -> bool {
-    plug.0 == socket.0 || plug.1 == socket.1
+/// Resolve part 1
+///
+/// # Errors
+///
+/// * [`Error::InvalidInputData`] - if the input data is invalid
+pub fn part_1(data: &str) -> Result<u64, Error<'_>> {
+    Ok(GridInfo::parse(data)?
+        .solve()
+        .map_err(|_| Error::InvalidInputData(data))?
+        .iter()
+        .sum())
 }
 
-fn strong_bond<'a>(plug: Socket<'a>, socket: Socket<'a>) -> bool {
-    plug.0 == socket.0 && plug.1 == socket.1
+/// Resolve part 2
+///
+/// # Errors
+///
+/// * [`Error::InvalidInputData`] - if the input data is invalid
+pub fn part_2(data: &str) -> Result<u64, Error<'_>> {
+    GridInfo::parse(data)?
+        .solve()
+        .map_err(|_| Error::InvalidInputData(data))?
+        .into_iter()
+        .max()
+        .ok_or(Error::InvalidInputData(data))
 }
 
-fn parse(line: &str) -> (u64, Socket<'_>, Socket<'_>, Socket<'_>, &'_ str) {
-    let mut parts = line.split(", ");
-    (
-        parts
-            .next()
-            .expect("cannot find id")
-            .split_once("id=")
-            .expect("invalid id")
-            .1
-            .parse()
-            .expect("invalid id"),
-        parts
-            .next()
-            .expect("cannot find plug")
-            .split_once("plug=")
-            .expect("invalid plug")
-            .1
-            .split_once(' ')
-            .expect("plug malformed"),
-        parts
-            .next()
-            .expect("cannot find leftSocket")
-            .split_once("leftSocket=")
-            .expect("invalid leftSocket")
-            .1
-            .split_once(' ')
-            .expect("leftSocket malformed"),
-        parts
-            .next()
-            .expect("cannot find rightSocket")
-            .split_once("rightSocket=")
-            .expect("invalid rightSocket")
-            .1
-            .split_once(' ')
-            .expect("leftSocket malformed"),
-        parts
-            .next()
-            .expect("cannot find data")
-            .split_once("data=")
-            .expect("invalid data")
-            .1,
-    )
-}
-
-/// # Panics
-#[must_use]
-fn solve<'a, const SIZE: usize>(data: &'a str, insert: impl Fn(&mut Nodes<'a, SIZE>, u64, Socket<'a>, Socket<'a>, Socket<'a>)) -> u64 {
-    let mut nodes = Nodes::<'a, SIZE>::new();
-    for line in data.lines() {
-        let (id, plug, left, right, _) = parse(line);
-
-        insert(&mut nodes, id, plug, left, right);
-    }
-
-    let mut checksum = 0;
-    let mut index = 1;
-    nodes.visit(|node| {
-        checksum += node.id * index;
-        index += 1;
-    });
-
-    checksum
-}
-
-/// # Panics
-#[must_use]
-pub fn part_1<'a>(data: &'a str) -> u64 {
-    solve::<'a, 32>(
-        data,
-        |nodes, id, plug, left, right| {
-            nodes.insert(strong_bond, id, plug, left, right);
-        },
-    )
-}
-
-/// # Panics
-#[must_use]
-pub fn part_2<'a>(data: &'a str) -> u64 {
-    solve::<'a, 128>(
-        data,
-        |nodes, id, plug, left, right| {
-            nodes.insert(weak_bond, id, plug, left, right);
-        },
-    )
-}
-
-/// # Panics
-#[must_use]
-pub fn part_3<'a>(data: &'a str) -> u64 {
-    solve::<'a, 256>(
-        data,
-        |nodes, id, plug, left, right| {
-            nodes.insert_break(id, plug, left, right);
-        },
-    )
+/// Resolve part 3
+///
+/// # Errors
+///
+/// * [`Error::InvalidInputData`] - if the input data is invalid
+pub fn part_3(data: &str) -> Result<u64, Error<'_>> {
+    GridInfo::parse(data)?
+        .solve()
+        .map_err(|_| Error::InvalidInputData(data))?
+        .into_iter()
+        .max()
+        .ok_or(Error::InvalidInputData(data))
 }
 
 #[cfg(test)]
@@ -318,58 +286,37 @@ mod tests {
 
     #[test]
     fn test_part_1() {
-        let data = r"id=1, plug=BLUE HEXAGON, leftSocket=GREEN CIRCLE, rightSocket=BLUE PENTAGON, data=?
-id=2, plug=GREEN CIRCLE, leftSocket=BLUE HEXAGON, rightSocket=BLUE CIRCLE, data=?
-id=3, plug=BLUE PENTAGON, leftSocket=BLUE CIRCLE, rightSocket=BLUE CIRCLE, data=?
-id=4, plug=BLUE CIRCLE, leftSocket=RED HEXAGON, rightSocket=BLUE HEXAGON, data=?
-id=5, plug=RED HEXAGON, leftSocket=GREEN CIRCLE, rightSocket=RED HEXAGON, data=?";
-        assert_eq!(part_1(data), 43);
+        let data = r"width=30
+height=10
+horizontal-offsets=10011
+vertical-offsets=11011";
+        assert_eq!(part_1(data).unwrap(), 27);
     }
 
     #[test]
-    fn test_part_2() {
-        let data = r"id=1, plug=RED TRIANGLE, leftSocket=RED TRIANGLE, rightSocket=RED TRIANGLE, data=?
-id=2, plug=GREEN TRIANGLE, leftSocket=BLUE CIRCLE, rightSocket=GREEN CIRCLE, data=?
-id=3, plug=BLUE PENTAGON, leftSocket=BLUE CIRCLE, rightSocket=GREEN CIRCLE, data=?
-id=4, plug=RED TRIANGLE, leftSocket=BLUE PENTAGON, rightSocket=GREEN PENTAGON, data=?
-id=5, plug=RED PENTAGON, leftSocket=GREEN CIRCLE, rightSocket=GREEN CIRCLE, data=?";
-        assert_eq!(part_2(data), 50);
+    fn test_part_2_1() {
+        let data = r"width=30
+height=10
+horizontal-offsets=10011
+vertical-offsets=11011";
+        assert_eq!(part_2(data).unwrap(), 15);
     }
 
     #[test]
-    fn test_part_3_1() {
-        let data = r"id=1, plug=RED TRIANGLE, leftSocket=RED TRIANGLE, rightSocket=RED TRIANGLE, data=?
-id=2, plug=GREEN TRIANGLE, leftSocket=BLUE CIRCLE, rightSocket=GREEN CIRCLE, data=?
-id=3, plug=BLUE PENTAGON, leftSocket=BLUE CIRCLE, rightSocket=GREEN CIRCLE, data=?
-id=4, plug=RED TRIANGLE, leftSocket=BLUE PENTAGON, rightSocket=GREEN PENTAGON, data=?
-id=5, plug=RED PENTAGON, leftSocket=GREEN CIRCLE, rightSocket=GREEN CIRCLE, data=?";
-        assert_eq!(part_3(data), 38);
+    fn test_part_2_2() {
+        let data = r"width=40
+height=12
+horizontal-offsets=11100
+vertical-offsets=001101";
+        assert_eq!(part_2(data).unwrap(), 7);
     }
 
     #[test]
-    fn test_part_3_2() {
-        let data = r"id=1, plug=RED TRIANGLE, leftSocket=BLUE TRIANGLE, rightSocket=GREEN TRIANGLE, data=?
-id=2, plug=GREEN TRIANGLE, leftSocket=BLUE CIRCLE, rightSocket=GREEN CIRCLE, data=?
-id=3, plug=BLUE PENTAGON, leftSocket=BLUE CIRCLE, rightSocket=GREEN CIRCLE, data=?
-id=4, plug=RED TRIANGLE, leftSocket=BLUE PENTAGON, rightSocket=GREEN PENTAGON, data=?
-id=5, plug=BLUE TRIANGLE, leftSocket=GREEN CIRCLE, rightSocket=RED CIRCLE, data=?
-id=6, plug=BLUE TRIANGLE, leftSocket=GREEN CIRCLE, rightSocket=RED CIRCLE, data=?";
-        assert_eq!(part_3(data), 60);
-    }
-
-    #[test]
-    fn test_parse() {
-        assert_eq!(
-            parse(
-                "id=1, plug=BLUE HEXAGON, leftSocket=GREEN CIRCLE, rightSocket=BLUE PENTAGON, data=?"
-            ),
-            (
-                1,
-                ("BLUE", "HEXAGON"),
-                ("GREEN", "CIRCLE"),
-                ("BLUE", "PENTAGON"),
-                "?"
-            ),
-        );
+    fn test_part_2_3() {
+        let data = r"width=100
+height=70
+horizontal-offsets=111101111101101111000100100110
+vertical-offsets=110100001110111011101000001111";
+        assert_eq!(part_2(data).unwrap(), 269);
     }
 }

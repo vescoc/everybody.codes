@@ -8,6 +8,7 @@ event = 4
 quest = 3
 
 [dependencies]
+thiserror.workspace = true
 
 [dev-dependencies]
 criterion.workspace = true

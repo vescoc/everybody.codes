@@ -2993,6 +2993,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "story-4-03"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+ "thiserror",
+]
+
+[[package]]
 name = "strength_reduce"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
