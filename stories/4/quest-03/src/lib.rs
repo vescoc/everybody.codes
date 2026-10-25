@@ -31,7 +31,7 @@ impl GridInfo {
     ///
     /// * data - input data
     ///
-    /// # Results
+    /// # Returns
     ///
     /// * [`GridInfo`]
     ///
