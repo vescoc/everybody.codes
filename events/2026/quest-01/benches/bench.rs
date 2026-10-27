@@ -10,15 +10,28 @@ const PART_3: &str = include_str!("../data/part_3");
 
 fn criterion_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("event-2026-01");
-    group.bench_function("part 1", |b| {
-        b.iter(|| hint::black_box(event::part_1(hint::black_box(PART_1))));
+
+    group.bench_function("part 1 lookup", |b| {
+        b.iter(|| hint::black_box(event::lookup::part_1(hint::black_box(PART_1))));
     });
-    group.bench_function("part 2", |b| {
-        b.iter(|| hint::black_box(event::part_2(hint::black_box(PART_2))));
+    group.bench_function("part 1 calc", |b| {
+        b.iter(|| hint::black_box(event::calc::part_1(hint::black_box(PART_1))));
     });
-    group.bench_function("part 3", |b| {
-        b.iter(|| hint::black_box(event::part_3(hint::black_box(PART_3))));
+
+    group.bench_function("part 2 lookup", |b| {
+        b.iter(|| hint::black_box(event::lookup::part_2(hint::black_box(PART_2))));
     });
+    group.bench_function("part 2 calc", |b| {
+        b.iter(|| hint::black_box(event::calc::part_2(hint::black_box(PART_2))));
+    });
+
+    group.bench_function("part 3 lookup", |b| {
+        b.iter(|| hint::black_box(event::lookup::part_3(hint::black_box(PART_3))));
+    });
+    group.bench_function("part 3 calc", |b| {
+        b.iter(|| hint::black_box(event::calc::part_3(hint::black_box(PART_3))));
+    });
+
     group.finish();
 }
 
