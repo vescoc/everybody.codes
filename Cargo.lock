@@ -1051,6 +1051,166 @@ dependencies = [
 ]
 
 [[package]]
+name = "event-2026-01"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2026-02"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2026-03"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2026-04"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2026-05"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2026-06"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2026-07"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2026-08"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2026-09"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2026-10"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2026-11"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2026-12"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2026-13"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2026-14"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2026-15"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2026-16"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2026-17"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2026-18"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2026-19"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
+name = "event-2026-20"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "everybody-codes",
+]
+
+[[package]]
 name = "everybody-codes"
 version = "0.1.0"
 dependencies = [

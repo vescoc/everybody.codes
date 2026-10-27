@@ -68,6 +68,28 @@ members = [
     "stories/4/quest-01",
     "stories/4/quest-02",
     "stories/4/quest-03",
+    
+    # Event 2026
+    "events/2026/quest-01",
+    "events/2026/quest-02",
+    "events/2026/quest-03",
+    "events/2026/quest-04",
+    "events/2026/quest-05",
+    "events/2026/quest-06",
+    "events/2026/quest-07",
+    "events/2026/quest-08",
+    "events/2026/quest-09",
+    "events/2026/quest-10",
+    "events/2026/quest-11",
+    "events/2026/quest-12",
+    "events/2026/quest-13",
+    "events/2026/quest-14",
+    "events/2026/quest-15",
+    "events/2026/quest-16",
+    "events/2026/quest-17",
+    "events/2026/quest-18",
+    "events/2026/quest-19",
+    "events/2026/quest-20",
 ]
 resolver = "3"
 
@@ -79,7 +101,7 @@ version = "0.1.0"
 authors = ["vescoc"]
 
 [workspace.dependencies]
-aes = "0.9.2" # "0.8.4"
+aes = "0.9.2"
 bytecount = "0.6.9"
 cbc = { version = "0.2.1", features = ["alloc"] }
 dirs = "6.0.0"
