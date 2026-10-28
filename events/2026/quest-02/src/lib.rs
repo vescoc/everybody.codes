@@ -1,36 +1,42 @@
 use std::cmp::Ordering;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use rayon::prelude::*;
 
-fn lookup_cmp(cmps: &HashMap<(u64, u64), Ordering>, (a, b): &(u64, u64)) -> Ordering {
-    fn lookup_cmp1(cmps: &HashMap<(u64, u64), Ordering>, a: u64, b: u64, o: Ordering) -> bool {
-        if let Some(cmp) = cmps.get(&(a, b))
-            && *cmp == o
-        {
-            return true;
+type OrderingTable = [[Option<Ordering>; 9]; 9];
+
+fn lookup_cmp(cmps: &OrderingTable, (a, b): &(usize, usize)) -> Ordering {
+    fn lookup_cmp1(cmps: &OrderingTable, a: usize, b: usize, o: Ordering) -> Option<bool> {
+        if let Some(cmp) = cmps[a][b] {
+            return Some(cmp == o);
         }
 
-        for ((_, c), _) in cmps.iter().filter(|((a1, _), o1)| *a1 == a && **o1 == o) {
-            if lookup_cmp1(cmps, *c, b, o) {
-                return true;
+        for (c, _) in cmps[a]
+            .iter()
+            .enumerate()
+            .filter(|(_, o1)| matches!(o1, Some(o1) if *o1 == o))
+        {
+            if let Some(r) = lookup_cmp1(cmps, c, b, o) && r {
+                return Some(r);
             }
         }
 
-        false
+        None
     }
 
-    if lookup_cmp1(cmps, *a, *b, Ordering::Less) {
+    if let Some(r) = lookup_cmp1(cmps, *a, *b, Ordering::Less) && r {
         Ordering::Less
-    } else {
+    } else if let Some(r) = lookup_cmp1(cmps, *a, *b, Ordering::Greater) && r {
         Ordering::Greater
+    } else {
+        unreachable!("invalid groups")
     }
 }
 
-fn parse_pair(pair: &str) -> (u64, Ordering, u64) {
+fn parse_pair(pair: &str) -> (usize, Ordering, usize) {
     let pair = pair.as_bytes();
-    let a = u64::from(pair[0] - b'0');
-    let b = u64::from(pair[2] - b'0');
+    let a = usize::from(pair[0] - b'0');
+    let b = usize::from(pair[2] - b'0');
     let cmp = match pair[1] {
         b'<' => Ordering::Less,
         b'=' => Ordering::Equal,
@@ -45,23 +51,27 @@ fn parse_pair(pair: &str) -> (u64, Ordering, u64) {
 #[must_use]
 fn solve(
     data: &str,
-    lookup_cmp: impl Fn(&HashMap<(u64, u64), Ordering>, &(u64, u64)) -> Ordering + Sync + Send,
+    lookup_cmp: impl Fn(&OrderingTable, &(usize, usize)) -> Ordering + Sync + Send,
 ) -> u64 {
     data.par_lines()
         .map(|line| {
             let mut blades = HashSet::with_capacity(1024);
-            let mut cmps = HashMap::with_capacity(1024);
+            let mut cmps = [[None; 9]; 9];
             for (a, cmp, b) in line.split_ascii_whitespace().map(parse_pair) {
                 blades.insert(a);
                 blades.insert(b);
-                cmps.insert((a, b), cmp.reverse());
-                cmps.insert((b, a), cmp);
+
+                // reversed ordering: "from hardest to the softest"
+                cmps[a - 1][b - 1] = Some(cmp.reverse());
+                cmps[b - 1][a - 1] = Some(cmp);
             }
 
             let mut blades = blades.into_iter().collect::<Vec<_>>();
-            blades.sort_by(|a, b| lookup_cmp(&cmps, &(*a, *b)));
+            blades.sort_by(|a, b| lookup_cmp(&cmps, &(*a - 1, *b - 1)));
 
-            blades.iter().fold(0, |acc, digit| acc * 10 + digit)
+            blades
+                .iter()
+                .fold(0u64, |acc, digit| acc * 10 + *digit as u64)
         })
         .sum()
 }
@@ -69,7 +79,7 @@ fn solve(
 /// # Panics
 #[must_use]
 pub fn part_1(data: &str) -> u64 {
-    solve(data, |cmps, pair| cmps[pair])
+    solve(data, |cmps, (a, b)| cmps[*a][*b].unwrap())
 }
 
 /// # Panics
