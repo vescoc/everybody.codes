@@ -21,3 +21,5 @@ harness = false
 workspace = true
 
 [dependencies]
+rayon.workspace = true
+z3.workspace = true

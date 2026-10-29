@@ -16,8 +16,11 @@ fn criterion_benchmark(c: &mut Criterion) {
     group.bench_function("part 2", |b| {
         b.iter(|| hint::black_box(event::part_2(hint::black_box(PART_2))));
     });
-    group.bench_function("part 3", |b| {
-        b.iter(|| hint::black_box(event::part_3(hint::black_box(PART_3))));
+    group.bench_function("part 3 bruteforce", |b| {
+        b.iter(|| hint::black_box(event::bf::part_3(hint::black_box(PART_3))));
+    });
+    group.bench_function("part 3 z3", |b| {
+        b.iter(|| hint::black_box(event::z3::part_3(hint::black_box(PART_3))));
     });
     group.finish();
 }

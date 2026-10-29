@@ -122,6 +122,7 @@ gcd = "2.3.0"
 imageproc = "0.27"
 clap = { version = "4.6", features = ["derive"] }
 nom = "8"
+z3 = "0.22"
 
 everybody-codes = { path = "common/everybody-codes" }
 mem = { path = "common/mem" }
