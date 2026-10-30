@@ -4,4 +4,4 @@
 **/*~
 **/target
 **/*.rs.bk
-**/data/*
+**/data/part_*
