@@ -9,6 +9,9 @@ quest = 5
 
 [dev-dependencies]
 criterion.workspace = true
+imageproc.workspace = true
+clap.workspace = true
+anyhow.workspace = true
 
 [build-dependencies]
 everybody-codes.workspace = true
