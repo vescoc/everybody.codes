@@ -120,24 +120,24 @@ pub fn part_3<const TRIGGER_ENERGY: u64>(data: &str) -> u64 {
     ) {
         let len = clouds.len();
 
-        // propagate impulses
         while !tokens.is_empty() {
             let mut new_tokens = vec![];
+
+            // propagate impulses
             let mut add = false;
             for (level, token) in tokens {
                 let mut new_token = vec![0; len];
-                for ((&running, connections), (energy, &impulses)) in running
+                for ((_, connections), (energy, &impulses)) in running
                     .iter()
                     .zip(clouds.iter())
                     .zip(energy.iter_mut().zip(token.iter()))
+                    .filter(|((running, _), (_, impulses))| **running && **impulses > 0)
                 {
-                    if running && impulses > 0 {
-                        *energy += level * impulses;
-                        if level > 1 {
-                            for &id in connections {
-                                add = true;
-                                new_token[id - 1] += impulses;
-                            }
+                    *energy += level * impulses;
+                    if level > 1 {
+                        for &id in connections {
+                            add = true;
+                            new_token[id - 1] += impulses;
                         }
                     }
                 }
@@ -148,19 +148,19 @@ pub fn part_3<const TRIGGER_ENERGY: u64>(data: &str) -> u64 {
             }
 
             // handle explosions
-            for (running, (&energy, connections)) in
-                running.iter_mut().zip(energy.iter().zip(clouds.iter()))
+            for (running, (_, connections)) in running
+                .iter_mut()
+                .zip(energy.iter().zip(clouds.iter()))
+                .filter(|(running, (energy, _))| **running && **energy >= TRIGGER_ENERGY)
             {
-                if *running && energy >= TRIGGER_ENERGY {
-                    *running = false;
+                *running = false;
 
-                    let mut token = vec![0; len];
-                    for &id in connections {
-                        token[id - 1] += 1;
-                    }
-
-                    new_tokens.push((10, token));
+                let mut token = vec![0; len];
+                for &id in connections {
+                    token[id - 1] += 1;
                 }
+
+                new_tokens.push((10, token));
             }
 
             tokens = new_tokens;
