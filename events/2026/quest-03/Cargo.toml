@@ -2,6 +2,9 @@
 name = "event-2026-03"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
+readme.workspace = true
+authors.workspace = true
 
 [package.metadata.everybody_codes]
 event = 2026
