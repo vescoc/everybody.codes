@@ -1212,8 +1212,11 @@ dependencies = [
 name = "event-2026-19"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "clap",
  "criterion",
  "everybody-codes",
+ "imageproc",
 ]
 
 [[package]]

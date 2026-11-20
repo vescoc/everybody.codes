@@ -1,9 +1,9 @@
 use std::cmp::Reverse;
 use std::ops;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 #[repr(usize)]
-enum Color {
+pub enum Color {
     K = 0b111,
     C = 0b001,
     M = 0b010,
