@@ -1225,6 +1225,8 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "everybody-codes",
+ "nom",
+ "rayon",
 ]
 
 [[package]]
